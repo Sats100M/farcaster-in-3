@@ -5,218 +5,472 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>farcaster-in-3: your own Farcaster node and client in three commands</title>
 <meta name="description" content="Run a Farcaster Snapchain read node and a client that posts through it. Three commands, no API keys.">
+<meta property="og:title" content="farcaster-in-3">
+<meta property="og:description" content="Your own Farcaster read node and client, in three commands. No API keys.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fbfaf8; --fg: #1d1b19; --muted: #6b665f; --line: #e6e2dc;
-    --code-bg: #f1eee9; --accent: #7c3aed; --warn-bg: #fff6e5; --warn-line: #f0c36d;
+    --bg: #0b0a10;
+    --bg-2: #12101a;
+    --card: #15131e;
+    --line: #262233;
+    --fg: #ecebf2;
+    --muted: #9b97ab;
+    --dim: #6d6880;
+    --accent: #8b5cf6;
+    --accent-2: #c4b5fd;
+    --glow: rgba(139, 92, 246, 0.35);
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --term: #0e0d14;
+    --code-inline: #1d1a28;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141312; --fg: #ece9e4; --muted: #a29d95; --line: #2b2926;
-      --code-bg: #1e1c1a; --accent: #a78bfa; --warn-bg: #2a2214; --warn-line: #7a5d22;
+  :root[data-theme="light"] {
+    --bg: #faf9fc; --bg-2: #f2f0f7; --card: #ffffff; --line: #e4e0ee;
+    --fg: #17151f; --muted: #5d5970; --dim: #8a859c;
+    --accent: #6d28d9; --accent-2: #6d28d9; --glow: rgba(124, 58, 237, 0.18);
+    --green: #15803d; --amber: #b45309; --term: #15131e; --code-inline: #efecf6;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #faf9fc; --bg-2: #f2f0f7; --card: #ffffff; --line: #e4e0ee;
+      --fg: #17151f; --muted: #5d5970; --dim: #8a859c;
+      --accent: #6d28d9; --accent-2: #6d28d9; --glow: rgba(124, 58, 237, 0.18);
+      --green: #15803d; --amber: #b45309; --term: #15131e; --code-inline: #efecf6;
     }
   }
+
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px; }
   body {
     margin: 0; background: var(--bg); color: var(--fg);
-    font: 17px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 16.5px/1.7 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
   }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 96px; }
-  header p.tag { color: var(--muted); margin-top: -8px; }
-  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.02em; }
-  h2 { font-size: 1.45rem; margin: 56px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-  h3 { font-size: 1.1rem; margin: 28px 0 4px; }
-  a { color: var(--accent); }
-  code { font: 0.88em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
-  pre { position: relative; background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 18px; }
-  pre code { background: none; padding: 0; font-size: 0.85rem; white-space: pre; }
-  .copy {
-    position: absolute; top: 8px; right: 8px; font: 12px ui-sans-serif, system-ui; color: var(--muted);
-    background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; cursor: pointer;
+  a { color: var(--accent-2); text-underline-offset: 3px; }
+  h1, h2, h3 { font-family: "Space Grotesk", Inter, sans-serif; letter-spacing: -0.02em; line-height: 1.15; }
+  code, pre, kbd { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+  p code, li code, td code, h3 code {
+    font-size: 0.86em; background: var(--code-inline); border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 5px; white-space: nowrap;
   }
-  .step { display: grid; grid-template-columns: 2.2rem 1fr; gap: 0 10px; margin: 22px 0; }
-  .step .n {
-    width: 2rem; height: 2rem; border-radius: 50%; background: var(--fg); color: var(--bg);
-    display: grid; place-items: center; font-weight: 700; margin-top: 2px;
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  /* Grid children default to min-width:auto, so a long code line would widen the page on phones. */
+  .hero .wrap > *, .layers > *, .grid2 > *, .needs > *, .steps > * { min-width: 0; }
+  @media (max-width: 560px) { p code, li code, td code { white-space: normal; overflow-wrap: anywhere; } }
+  .narrow { max-width: 760px; }
+
+  /* ---- nav ---- */
+  nav.top {
+    position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--line);
   }
-  .step > div { min-width: 0; }
-  .step h3 { margin: 0 0 2px; }
-  .note { background: var(--warn-bg); border-left: 3px solid var(--warn-line); padding: 12px 16px; border-radius: 4px; margin: 18px 0; }
-  .note p { margin: 0 0 8px; } .note p:last-child { margin: 0; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; display: block; overflow-x: auto; }
-  th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-  nav.toc { font-size: 0.95rem; columns: 2; column-gap: 24px; margin: 12px 0 0; }
-  nav.toc a { display: block; text-decoration: none; padding: 2px 0; }
-  @media (max-width: 560px) { nav.toc { columns: 1; } h1 { font-size: 1.7rem; } }
-  footer { color: var(--muted); font-size: 0.9rem; margin-top: 64px; }
+  nav.top .wrap { display: flex; align-items: center; gap: 20px; height: 58px; }
+  .brand { font: 700 17px "Space Grotesk", sans-serif; color: var(--fg); text-decoration: none; display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .brand .mark { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), #ec4899); display: grid; place-items: center; color: #fff; font-size: 13px; }
+  nav.top .links { display: flex; gap: 18px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+  nav.top .links::-webkit-scrollbar { display: none; }
+  nav.top .links a { color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+  nav.top .links a:hover { color: var(--fg); }
+  .theme { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; flex: none; font-size: 15px; }
+  @media (max-width: 640px) { nav.top .links .opt { display: none; } }
+
+  /* ---- hero ---- */
+  .hero { position: relative; padding: 88px 0 72px; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -40% -10% auto; height: 620px;
+    background: radial-gradient(closest-side, var(--glow), transparent 70%); pointer-events: none;
+  }
+  .hero::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+  }
+  .hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+  @media (max-width: 880px) { .hero .wrap { grid-template-columns: 1fr; gap: 36px; } .hero { padding: 56px 0 48px; } }
+  .eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--accent-2); border: 1px solid var(--line); background: var(--bg-2); padding: 4px 12px; border-radius: 999px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .hero h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); margin: 18px 0 16px; }
+  .hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent-2), #f0abfc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 26px; max-width: 34em; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--line); color: var(--fg); background: var(--card); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 8px 30px -8px var(--glow); }
+  .btn:hover { transform: translateY(-1px); }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 26px; }
+  .pill { font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; }
+
+  /* ---- terminal ---- */
+  .term { background: var(--term); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6); }
+  .term .bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid #23202e; }
+  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a3647; display: block; }
+  .term .bar i:nth-child(1) { background: #ff5f57; } .term .bar i:nth-child(2) { background: #febc2e; } .term .bar i:nth-child(3) { background: #28c840; }
+  .term .bar span { margin-left: 8px; font: 12px "JetBrains Mono", monospace; color: #8d889c; }
+  .term pre { margin: 0; padding: 18px 18px 20px; overflow-x: auto; font-size: 13px; line-height: 1.75; color: #e7e5ee; }
+  .term .c { color: #6f6a80; } .term .p { color: #a78bfa; } .term .ok { color: #4ade80; } .term .s { color: #fcd34d; }
+
+  /* ---- code blocks ---- */
+  .code { position: relative; background: var(--term); border: 1px solid var(--line); border-radius: 12px; margin: 14px 0 18px; }
+  .code pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.7; color: #e7e5ee; }
+  .code pre .c { color: #6f6a80; }
+  .copy { position: absolute; top: 9px; right: 9px; font: 12px Inter, sans-serif; color: #b9b5c7; background: #1f1c2a; border: 1px solid #2d2939; border-radius: 7px; padding: 3px 10px; cursor: pointer; }
+  .copy:hover { color: #fff; }
+
+  /* ---- sections ---- */
+  section { padding: 72px 0; border-top: 1px solid var(--line); }
+  section h2 { font-size: clamp(1.7rem, 4vw, 2.3rem); margin: 0 0 10px; }
+  section .sub { color: var(--muted); margin: 0 0 28px; font-size: 1.05rem; }
+  .kicker { font: 600 12px Inter, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 10px; }
+  section h3 { font-size: 1.2rem; margin: 30px 0 6px; }
+
+  /* quickstart steps */
+  .steps { display: grid; gap: 18px; counter-reset: step; }
+  .stepcard { display: grid; grid-template-columns: 52px 1fr; gap: 0 18px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .stepcard .num { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 700 20px "Space Grotesk", sans-serif; color: #fff; background: linear-gradient(135deg, var(--accent), #db2777); }
+  .stepcard > div { min-width: 0; }
+  .stepcard h3 { margin: 6px 0 2px; font-size: 1.25rem; }
+  .stepcard p { margin: 6px 0 0; color: var(--muted); }
+  @media (max-width: 560px) { .stepcard { grid-template-columns: 1fr; padding: 18px; } .stepcard .num { margin-bottom: 10px; } }
+  .needs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 26px; }
+  .needs div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 14.5px; color: var(--muted); }
+  .needs b { display: block; color: var(--fg); font-weight: 600; margin-bottom: 2px; }
+  @media (max-width: 720px) { .needs { grid-template-columns: 1fr; } }
+
+  .callout { display: grid; grid-template-columns: 26px 1fr; gap: 12px; border: 1px solid color-mix(in srgb, var(--amber) 40%, var(--line)); background: color-mix(in srgb, var(--amber) 7%, var(--card)); border-radius: 14px; padding: 18px 20px; margin: 26px 0; }
+  .callout .ic { color: var(--amber); font-size: 20px; line-height: 1.3; }
+  .callout p { margin: 0 0 8px; } .callout p:last-child { margin: 0; }
+
+  /* layers */
+  .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 8px 0 8px; }
+  .layer { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .layer .tag { font: 500 12px "JetBrains Mono", monospace; color: var(--accent-2); }
+  .layer h3 { margin: 6px 0 6px; }
+  .layer p { margin: 0; color: var(--muted); font-size: 15px; }
+  @media (max-width: 760px) { .layers { grid-template-columns: 1fr; } }
+
+  /* two-column concept grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid2 > div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .grid2 h3 { margin-top: 0; }
+  .grid2 p { color: var(--muted); font-size: 15.5px; }
+  .grid2 p:last-child { margin-bottom: 0; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* diagram */
+  .diagram { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 22px 0; overflow-x: auto; }
+  .diagram svg { display: block; width: 100%; min-width: 640px; height: auto; }
+  .diagram text { font-family: Inter, sans-serif; fill: var(--fg); }
+  .diagram .lbl { fill: var(--muted); font-size: 12px; }
+
+  ol.sigs { padding-left: 1.2em; } ol.sigs li { margin: 6px 0; color: var(--muted); } ol.sigs li b { color: var(--fg); }
+
+  /* tables */
+  .table { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 600; color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin: 10px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 60px; color: var(--dim); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer a { color: var(--muted); }
 </style>
 </head>
 <body>
-<main>
 
-<header>
-  <h1>Your own Farcaster, in three commands</h1>
-  <p class="tag">A Snapchain read node on a server you rent, and a client on your laptop that reads from it and posts through it. No API keys, nobody's permission.</p>
-  <p><a href="https://github.com/Sats100M/farcaster-in-3">Source on GitHub</a> (MIT)</p>
-</header>
-
-<h2 id="quickstart">Quickstart</h2>
-
-<p>You need: <a href="https://nodejs.org">Node.js 20+</a>, an account with a cloud provider (Azure, AWS or Hetzner, see <a href="#step0">which one</a>), and a Farcaster account that has storage, with its recovery phrase.</p>
-
-<div class="step"><div class="n">0</div><div>
-  <h3>Rent a server</h3>
-  <pre><code>git clone https://github.com/Sats100M/farcaster-in-3 && cd farcaster-in-3
-az login     # or: aws login, or put HCLOUD_TOKEN in .env for Hetzner
-node scripts/provision.mjs --provider azure</code></pre>
-  <p>Shows the price, asks, then creates a 4 vCPU / 16 GB server with a 2 TB disk and the right ports open. It prints command 1 for you.</p>
-</div></div>
-
-<div class="step"><div class="n">1</div><div>
-  <h3>Start a Snapchain read node</h3>
-  <pre><code>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server ip&gt; \
-  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid &lt;your fid&gt;"</code></pre>
-  <p>Installs Docker and the official Snapchain node, then starts syncing. The first sync downloads a ~470 GB snapshot and takes several hours. Check with <code>fc-node-status</code> on the server.</p>
-</div></div>
-
-<div class="step"><div class="n">2</div><div>
-  <h3>Run the client</h3>
-  <pre><code>cd client && npm install
-node fc.mjs init --node &lt;server ip&gt;</code></pre>
-  <p>Asks for your recovery phrase once, uses it to give this client its own app key, and forgets it. Then:</p>
-  <pre><code>node fc.mjs feed
-node fc.mjs cast "posting from my own node"
-node fc.mjs follow dwr
-node fc.mjs like 3/0x…
-node fc.mjs feed --hide-app &lt;app&gt;</code></pre>
-</div></div>
-
-<div class="note">
-  <p><strong>About the seed phrase.</strong> Your recovery phrase controls your account. Treat pasting it like running <code>rm -rf</code>: only do it in software you have read or trust. The client uses it in memory to sign one message and never stores or sends it, but you should check that yourself (<a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">it's one file</a>).</p>
-  <p>If you're trying this for the first time, use a test account, not your main one.</p>
-</div>
-
-<p>When you're done: <code>node scripts/destroy.mjs --provider azure</code> deletes everything so billing stops.</p>
-
-<nav class="toc">
-  <a href="#how">How Farcaster fits together</a>
-  <a href="#fid">FIDs and custody addresses</a>
-  <a href="#storage">Storage rent</a>
-  <a href="#snapchain">Snapchain, validators and read nodes</a>
-  <a href="#appkeys">App keys</a>
-  <a href="#step0">Step 0 in detail: the server</a>
-  <a href="#step1">Step 1 in detail: the node</a>
-  <a href="#step2">Step 2 in detail: the client</a>
-  <a href="#clients">Filtering by client</a>
-  <a href="#cost">What it costs</a>
-  <a href="#trouble">Troubleshooting</a>
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><span class="mark">3</span>farcaster-in-3</a>
+    <div class="links">
+      <a href="#quickstart">Quickstart</a>
+      <a href="#concepts" class="opt">Concepts</a>
+      <a href="#node" class="opt">The node</a>
+      <a href="#client" class="opt">The client</a>
+      <a href="#cost">Cost</a>
+      <a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a>
+    </div>
+    <button class="theme" id="theme" aria-label="Toggle theme">◐</button>
+  </div>
 </nav>
 
-<h2 id="how">How Farcaster fits together</h2>
-<p>Farcaster splits a social network into three layers, run by different people:</p>
-<table>
-  <tr><th>Layer</th><th>What lives there</th><th>Where</th></tr>
-  <tr><td>Identity</td><td>Your account number (FID), which wallet owns it, your app keys if added onchain, storage you've paid for</td><td>Smart contracts on Optimism (an Ethereum L2)</td></tr>
-  <tr><td>Data</td><td>Casts, likes, follows, profile info, each one a small signed message</td><td>Snapchain, Farcaster's own network of nodes</td></tr>
-  <tr><td>Apps</td><td>The feed you scroll, the post button</td><td>Anyone's software, including the client in this repo</td></tr>
-</table>
-<p>No single app owns your account. If one app bans you or shuts down, your FID, followers and casts are still on the network, and any other client can show them. Running your own node and client is the most direct way to see that for yourself.</p>
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Snapchain read node + client</span>
+      <h1>Your own Farcaster.<br><em>Three commands.</em></h1>
+      <p class="lede">Rent a server, run a Snapchain read node on it, and post from a client that talks only to your node. No API keys, no one's permission, nothing in between.</p>
+      <div class="cta">
+        <a class="btn primary" href="#quickstart">Start the quickstart →</a>
+        <a class="btn" href="https://github.com/Sats100M/farcaster-in-3">View source</a>
+      </div>
+      <div class="pills">
+        <span class="pill">No API keys</span>
+        <span class="pill">Gasless app keys</span>
+        <span class="pill">AWS · Azure · Hetzner</span>
+        <span class="pill">MIT</span>
+      </div>
+    </div>
+    <div class="term" aria-label="The three commands">
+      <div class="bar"><i></i><i></i><i></i><span>~/farcaster-in-3</span></div>
+<pre><span class="c"># 0. rent a server (prints the price, asks first)</span>
+<span class="p">$</span> node scripts/provision.mjs
+<span class="ok">✓</span> vm snapchain-1 at 172.174.89.126
 
-<h2 id="fid">FIDs and custody addresses</h2>
-<p>An <strong>FID</strong> (Farcaster ID) is your account number, an integer issued by the ID Registry contract on Optimism. Usernames like <code>@dwr</code> are a separate, changeable label that points to an FID.</p>
-<p>The <strong>custody address</strong> is the Ethereum wallet that owns the FID. Its private key comes from your recovery phrase (the standard Ethereum path, <code>m/44'/60'/0'/0/0</code>). Whoever holds it can transfer the account, add or remove app keys, and change the recovery address. That's why you only use it to authorize things, never for day-to-day posting.</p>
-<p>The client looks up which FID your custody address owns by asking your own node (<code>getIdRegistryOnChainEventByAddress</code>). Nodes follow the Optimism contracts, so no Ethereum RPC or API key is needed.</p>
+<span class="c"># 1. start a Snapchain read node on it</span>
+<span class="p">$</span> ssh … "curl -fsSL …/node.sh | sudo bash"
+<span class="ok">✓</span> Snapchain read node is starting
 
-<h2 id="storage">Storage rent</h2>
-<p>Every message takes up space on every node, so accounts pay rent for it. Storage is bought in units on Optimism, and each unit lasts a year. One unit holds roughly 5,000 casts, 2,500 reactions and 2,500 follows. When you go over, the oldest messages of that type are pruned to make room.</p>
-<p>Most accounts made through the Farcaster app come with storage already. The client in this repo needs an account that has some: it can't post for an account with none.</p>
+<span class="c"># 2. your client, reading from your node</span>
+<span class="p">$</span> node fc.mjs init --node 172.174.89.126
+<span class="ok">✓</span> App key is live
+<span class="p">$</span> node fc.mjs cast <span class="s">"gm from my own node"</span></pre>
+    </div>
+  </div>
+</header>
 
-<h2 id="snapchain">Snapchain, validators and read nodes</h2>
-<p>Snapchain is the network that orders and stores Farcaster messages. It's split into shards; your FID decides which shard your messages go to.</p>
-<p><strong>Validators</strong> are a small, known set of nodes that propose and vote on blocks. You can't become one by running software; they're chosen through an onchain config.</p>
-<p><strong>Read nodes</strong> run the same software with <code>read_node = true</code>. They follow the chain, keep the full state, and serve the same HTTP (port 3381) and gRPC (port 3383) APIs. Anyone can run one. That's what step 1 sets up.</p>
-<p>Can you post through a read node? Yes. A read node has no mempool of its own: when you submit a message it checks that it's valid and new, gossips it to the network, and keeps nothing. A validator picks it up from gossip and puts it in a block. So "success" from your node means <em>accepted and relayed</em>, not <em>included</em>. Under heavy load a relayed message can get lost and need resending; the client shows the cast's ID so you can check it landed.</p>
+<section id="quickstart">
+  <div class="wrap narrow">
+    <div class="kicker">Quickstart</div>
+    <h2>Up and running</h2>
+    <p class="sub">About ten minutes of your time, plus a few hours of the node syncing on its own.</p>
 
-<h2 id="appkeys">App keys</h2>
-<p>Apps don't post with your custody key. Each app gets its own <strong>app key</strong> (also called a signer): an Ed25519 key pair that can sign messages for your FID and nothing else.</p>
-<p>Since mid-2026, adding an app key doesn't need an Optimism transaction. The client sends a <code>KEY_ADD</code> message straight to Snapchain, carrying three signatures:</p>
-<ol>
-  <li>Your custody address signs an EIP-712 <code>KeyAdd</code>: which key, which message types it may sign, how long it lives, and a nonce.</li>
-  <li>The requesting app's custody address signs a <code>SignedKeyRequest</code> naming the app's FID. Here the client acts as its own app, so it's your custody address again.</li>
-  <li>The new key signs the message envelope, proving whoever added it actually holds it.</li>
-</ol>
-<p>The key in this client may only post, delete casts, react and follow. It can't add other keys or touch the account. It expires after 30 days without use, and every use pushes that back. The older onchain way (the KeyGateway contract) still works and those keys never expire, but it costs gas.</p>
+    <div class="needs">
+      <div><b>Node.js 20+</b>on your own computer</div>
+      <div><b>A cloud account</b>Azure, AWS or Hetzner (<a href="#providers">which?</a>)</div>
+      <div><b>A Farcaster account</b>with storage, and its recovery phrase</div>
+    </div>
 
-<h2 id="step0">Step 0 in detail: the server</h2>
-<p>Snapchain's stated requirements: 4 CPU cores, 16 GB RAM, a public IP, ports 3381–3383 open (3382 is UDP), and a lot of disk. The docs say 1.5–2 TB. We measured the first sync: the snapshot alone is about 5,700 chunks of ~82 MB, so ~470 GB compressed, and it stays on disk while it unpacks. Use 2 TB.</p>
-<p><code>provision.mjs</code> creates exactly that, tags everything, and <code>destroy.mjs</code> removes it all. Things we hit on each provider:</p>
-<table>
-  <tr><th>Provider</th><th>What to know</th></tr>
-  <tr><td>Azure</td><td>New subscriptions have Compute switched off until it's registered; the script does it. Free trials get 4 vCPUs per region, exactly enough. Popular sizes are often sold out in a region; the script tries other sizes and regions. Free-trial credit expires after 30 days.</td></tr>
-  <tr><td>AWS</td><td>Free-plan accounts can't launch anything this big. Upgrading keeps your credits, but accounts created with the new "Projects" experience still block EC2 and Lightsail until you activate advanced features. Lightsail (<code>--provider lightsail</code>) includes 6 TB of transfer.</td></tr>
-  <tr><td>Hetzner</td><td>Cheapest for an established account. Brand-new accounts can't create a 1 TB+ volume and can't request a higher limit yet.</td></tr>
-</table>
+    <div class="steps">
+      <div class="stepcard"><div class="num">0</div><div>
+        <h3>Rent a server</h3>
+        <div class="code"><pre>git clone https://github.com/Sats100M/farcaster-in-3 && cd farcaster-in-3
+az login       <span class="c"># or: aws login, or HCLOUD_TOKEN=... in .env for Hetzner</span>
+node scripts/provision.mjs --provider azure</pre></div>
+        <p>Shows the price and asks before creating anything. You get a 4 vCPU / 16 GB server with a 2 TB disk and the Snapchain ports open, and it prints command 1 for you.</p>
+      </div></div>
 
-<h2 id="step1">Step 1 in detail: the node</h2>
-<p><code>node.sh</code> wraps the official installer, <a href="https://github.com/farcasterxyz/snapchain">farcasterxyz/snapchain</a>'s <code>snapchain.sh</code>. It adds three things:</p>
-<ul>
-  <li>It formats and mounts the big data disk and keeps the node's database there.</li>
-  <li>It pre-answers the installer's prompts (it asks you to agree there are no rewards for running a node, and for an FID to pick an auto-upgrade day). The official bootstrap reads those from the keyboard, which breaks when piped over SSH.</li>
-  <li>It installs <code>fc-node-status</code>, which shows snapshot progress and then how far behind each shard is.</li>
-</ul>
-<p>A new node downloads a snapshot first (several hours), restores it, then catches up block by block. It's synced when every shard is a few seconds behind. A weekly cron job upgrades the node automatically.</p>
-<pre><code>fc-node-status                       # on the server
-curl http://&lt;ip&gt;:3381/v1/info         # from anywhere
-curl "http://&lt;ip&gt;:3381/v1/castsByFid?fid=3&amp;pageSize=3&amp;reverse=1"</code></pre>
+      <div class="stepcard"><div class="num">1</div><div>
+        <h3>Start a Snapchain read node</h3>
+        <div class="code"><pre>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server-ip&gt; \
+  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid &lt;your-fid&gt;"</pre></div>
+        <p>Installs Docker and the official Snapchain node, then starts syncing. The first sync pulls a ~470 GB snapshot and takes several hours. Run <code>fc-node-status</code> on the server to watch it.</p>
+      </div></div>
 
-<h2 id="step2">Step 2 in detail: the client</h2>
-<p>The client is one file, <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs"><code>client/fc.mjs</code></a>, built on the official <code>@farcaster/hub-nodejs</code> library. It only ever talks to the node you give it.</p>
-<ul>
-  <li><code>init</code> derives your custody address from the phrase, finds your FID on your node, creates an app key, submits the <code>KEY_ADD</code>, and waits until the key shows up in a block. Only the app key is saved, in <code>~/.farcaster-in-3.json</code>.</li>
-  <li><code>feed</code> reads who you follow, fetches their latest casts from your node, and merges them by time. Nothing is ranked or hidden by anyone but you.</li>
-  <li><code>cast</code>, <code>follow</code>, <code>like</code>, <code>recast</code> build a message, sign it with the app key and submit it to your node, which relays it to the validators.</li>
-</ul>
+      <div class="stepcard"><div class="num">2</div><div>
+        <h3>Run the client</h3>
+        <div class="code"><pre>cd client && npm install
+node fc.mjs init --node &lt;server-ip&gt;</pre></div>
+        <p>Asks for your recovery phrase once, uses it to give this client its own app key, and forgets it. Then:</p>
+        <div class="code"><pre>node fc.mjs feed                         <span class="c"># people you follow</span>
+node fc.mjs cast "posting from my own node"
+node fc.mjs follow dwr
+node fc.mjs like 3/0x…                   <span class="c"># ids are shown in the feed</span>
+node fc.mjs feed --hide-app &lt;app&gt;        <span class="c"># filter by client</span></pre></div>
+      </div></div>
+    </div>
 
-<h2 id="clients">Filtering by client</h2>
-<p>Every message is signed by an app key, and every app key records the FID of the app that requested it (<code>requestFid</code>). So your node knows which app each cast came from, without trusting the app.</p>
-<p><code>&lt;app&gt;</code> is the app's username or FID, as listed by <code>fc apps</code>.</p>
-<pre><code>node fc.mjs apps dwr                 # which apps a user posts from
-node fc.mjs feed --only-app &lt;app&gt;    # only casts made in that app
-node fc.mjs feed --hide-app &lt;app&gt;    # everything except that app</code></pre>
+    <div class="callout">
+      <div class="ic">⚠</div>
+      <div>
+        <p><strong>Treat your recovery phrase like <code>rm -rf</code>.</strong> It controls your account. Only paste it into software you have read or trust. This client uses it in memory to sign one message and never stores or sends it, but check that yourself: <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">it's one file</a>.</p>
+        <p>Trying this for the first time? Use a test account, not your main one.</p>
+      </div>
+    </div>
 
-<h2 id="cost">What it costs</h2>
-<table>
-  <tr><th>Provider</th><th>Server + 2 TB</th><th>Per day</th></tr>
-  <tr><td>Azure (D4s_v4, East US, Standard SSD)</td><td>~$294/mo</td><td>~$9.70</td></tr>
-  <tr><td>AWS Lightsail (16 GB + 2 TB disk)</td><td>~$289/mo</td><td>~$9.50</td></tr>
-  <tr><td>Hetzner (CX43 + 2 TB volume)</td><td>~$176/mo</td><td>~$5.80</td></tr>
-</table>
-<p>All of them bill by the hour, and new accounts usually come with credit. Try it for a day, then run <code>destroy.mjs</code>.</p>
+    <p>Done for now? <code>node scripts/destroy.mjs --provider azure</code> deletes everything so billing stops.</p>
+  </div>
+</section>
 
-<h2 id="trouble">Troubleshooting</h2>
-<h3><code>fc init</code> says it can't reach the node</h3>
-<p>The API only comes up after the snapshot is restored. Run <code>fc-node-status</code> on the server. Also check port 3383 is open (the provision script opens it).</p>
-<h3>"nonce is not greater than stored nonce"</h3>
-<p>Another key was added for your FID at the same moment. Run <code>init</code> again.</p>
-<h3>My cast doesn't show up in other apps</h3>
-<p>Give it a few seconds. If it never appears, the relay was dropped under load: post it again.</p>
+<section id="concepts">
+  <div class="wrap narrow">
+    <div class="kicker">Concepts</div>
+    <h2>How Farcaster fits together</h2>
+    <p class="sub">A social network split into layers that different people run. No single app owns your account.</p>
+  </div>
+  <div class="wrap">
+    <div class="layers">
+      <div class="layer"><span class="tag">Optimism</span><h3>Identity</h3><p>Your account number (FID), the wallet that owns it, and the storage you've paid for live in smart contracts on Optimism.</p></div>
+      <div class="layer"><span class="tag">Snapchain</span><h3>Data</h3><p>Casts, likes, follows and profile info. Each one is a small signed message, stored by every node on Farcaster's own network.</p></div>
+      <div class="layer"><span class="tag">Anyone's code</span><h3>Apps</h3><p>The feed you scroll and the post button. Any software can be a client, including the one in this repo.</p></div>
+    </div>
+  </div>
+  <div class="wrap narrow">
+    <p>If one app bans you or shuts down, your FID, followers and casts are still on the network, and any other client can show them. Running your own node and client is the most direct way to see that for yourself.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="grid2" style="margin-top:28px">
+      <div>
+        <h3>FIDs and custody addresses</h3>
+        <p>An <strong>FID</strong> is your account number, issued by the ID Registry contract on Optimism. Usernames like <code>@dwr</code> are a separate label that points to an FID.</p>
+        <p>The <strong>custody address</strong> is the Ethereum wallet that owns the FID, derived from your recovery phrase (<code>m/44'/60'/0'/0/0</code>). It can transfer the account and add or remove app keys, so you use it to authorize things, never to post.</p>
+      </div>
+      <div>
+        <h3>Storage rent</h3>
+        <p>Every message takes space on every node, so accounts pay rent. Storage is bought in yearly units on Optimism; one unit holds roughly 5,000 casts, 2,500 reactions and 2,500 follows. Go over, and the oldest messages of that type are pruned.</p>
+        <p>Accounts made in the Farcaster app usually come with storage. This client can't post for an account that has none.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap narrow">
+    <h3 id="snapchain" style="margin-top:48px">Snapchain, validators and read nodes</h3>
+    <p>Snapchain orders and stores every Farcaster message. It's split into shards, and your FID decides which shard your messages go to.</p>
+    <p><strong>Validators</strong> are a small, known set of nodes that propose and vote on blocks, chosen through an onchain config. <strong>Read nodes</strong> run the same software with <code>read_node = true</code>: they follow the chain, keep the full state, and serve the same HTTP (3381) and gRPC (3383) APIs. Anyone can run one, and that's what step 1 sets up.</p>
+  </div>
+  <div class="wrap">
+    <div class="diagram">
+      <svg viewBox="0 0 900 230" role="img" aria-label="A cast goes from your client to your read node, is gossiped to validators, included in a block, and synced back to your node">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8b5cf6"/></marker>
+          <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ade80"/></marker>
+        </defs>
+        <rect x="10" y="70" width="170" height="80" rx="14" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="95" y="104" text-anchor="middle" font-weight="600" font-size="15">Your client</text>
+        <text x="95" y="126" text-anchor="middle" class="lbl">laptop · app key</text>
+
+        <rect x="300" y="70" width="190" height="80" rx="14" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="395" y="104" text-anchor="middle" font-weight="600" font-size="15">Your read node</text>
+        <text x="395" y="126" text-anchor="middle" class="lbl">full state · no mempool</text>
+
+        <rect x="620" y="20" width="270" height="180" rx="14" fill="none" stroke="#3a3550" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <text x="755" y="46" text-anchor="middle" class="lbl">Snapchain validators</text>
+        <circle cx="690" cy="110" r="26" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
+        <circle cx="755" cy="80" r="26" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
+        <circle cx="820" cy="110" r="26" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
+        <circle cx="755" cy="148" r="26" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
+        <text x="755" y="188" text-anchor="middle" class="lbl">propose · vote · blocks</text>
+
+        <line x1="182" y1="98" x2="296" y2="98" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar)"/>
+        <text x="239" y="88" text-anchor="middle" class="lbl">1. submit</text>
+        <line x1="492" y1="98" x2="616" y2="98" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar)"/>
+        <text x="554" y="88" text-anchor="middle" class="lbl">2. gossip</text>
+        <line x1="616" y1="130" x2="494" y2="130" stroke="#4ade80" stroke-width="1.6" marker-end="url(#ag)"/>
+        <text x="554" y="150" text-anchor="middle" class="lbl">3. block syncs back</text>
+        <line x1="296" y1="130" x2="184" y2="130" stroke="#4ade80" stroke-width="1.6" marker-end="url(#ag)"/>
+        <text x="239" y="150" text-anchor="middle" class="lbl">4. read it</text>
+      </svg>
+    </div>
+  </div>
+  <div class="wrap narrow">
+    <p><strong>Can you post through a read node?</strong> Yes. A read node has no mempool of its own. When you submit a message it checks that it's valid and new, gossips it to the network, and keeps nothing. A validator picks it up and puts it in a block, which then syncs back to your node. So "success" from your node means <em>accepted and relayed</em>, not <em>included</em>. Under heavy load a relayed message can get lost; the client shows the cast's ID so you can check it landed.</p>
+
+    <h3 id="appkeys" style="margin-top:44px">App keys</h3>
+    <p>Apps don't post with your custody key. Each app gets its own <strong>app key</strong> (a signer): an Ed25519 key pair that can sign messages for your FID and nothing else.</p>
+    <p>Since mid-2026, adding one doesn't need an Optimism transaction. The client sends a <code>KEY_ADD</code> message straight to Snapchain, carrying three signatures:</p>
+    <ol class="sigs">
+      <li><b>Your custody address</b> signs an EIP-712 <code>KeyAdd</code>: which key, which message types it may sign, how long it lives, and a nonce.</li>
+      <li><b>The requesting app's custody address</b> signs a <code>SignedKeyRequest</code> naming the app's FID. This client acts as its own app, so that's your custody address again.</li>
+      <li><b>The new key itself</b> signs the message envelope, proving whoever added it actually holds it.</li>
+    </ol>
+    <p>The key in this client may only post, delete casts, react and follow. It can't add other keys or touch the account. It expires after 30 days without use, and every use pushes that back. The older onchain route (the KeyGateway contract) still works and never expires, but costs gas.</p>
+  </div>
+</section>
+
+<section id="node">
+  <div class="wrap narrow">
+    <div class="kicker">Steps 0 and 1 in detail</div>
+    <h2>The server and the node</h2>
+    <p class="sub">Snapchain asks for 4 cores, 16 GB RAM, a public IP, ports 3381–3383 open (3382 is UDP), and a lot of disk.</p>
+    <p>The docs say 1.5–2 TB. We measured the first sync: the snapshot is about 5,700 chunks of ~82 MB, so ~470 GB compressed, and the chunks stay on disk while it unpacks. Use 2 TB. <code>provision.mjs</code> creates exactly that, tags everything, and <code>destroy.mjs</code> removes it all.</p>
+
+    <h3 id="providers">Provider notes, from actually doing it</h3>
+  </div>
+  <div class="wrap narrow">
+    <div class="table"><table>
+      <tr><th>Provider</th><th>What to know</th></tr>
+      <tr><td><b>Azure</b></td><td>New subscriptions have Compute switched off until it's registered; the script does it. Free trials get 4 vCPUs per region, exactly enough. Popular sizes sell out per region; the script falls back to other sizes and regions. Trial credit expires after 30 days.</td></tr>
+      <tr><td><b>AWS</b></td><td>Free-plan accounts can't launch anything this big. Upgrading keeps your credits, but accounts made with the new "Projects" experience still block EC2 and Lightsail until advanced features are activated. Lightsail (<code>--provider lightsail</code>) includes 6 TB of transfer.</td></tr>
+      <tr><td><b>Hetzner</b></td><td>Cheapest once your account is established. Brand-new accounts can't create a volume this big and can't ask for a higher limit yet.</td></tr>
+    </table></div>
+
+    <h3>What node.sh does</h3>
+    <p>It wraps the official installer from <a href="https://github.com/farcasterxyz/snapchain">farcasterxyz/snapchain</a> and adds three things: it formats and mounts the data disk and keeps the database there; it pre-answers the installer's prompts, which otherwise read from the keyboard and break over SSH; and it installs <code>fc-node-status</code>, which shows snapshot progress and then how far behind each shard is.</p>
+    <p>A new node downloads the snapshot (several hours), restores it, then catches up block by block. It's synced when every shard is a few seconds behind. A weekly cron job keeps it upgraded.</p>
+    <div class="code"><pre>fc-node-status                                  <span class="c"># on the server</span>
+curl http://&lt;ip&gt;:3381/v1/info                    <span class="c"># from anywhere</span>
+curl "http://&lt;ip&gt;:3381/v1/castsByFid?fid=3&amp;pageSize=3&amp;reverse=1"</pre></div>
+  </div>
+</section>
+
+<section id="client">
+  <div class="wrap narrow">
+    <div class="kicker">Step 2 in detail</div>
+    <h2>The client</h2>
+    <p class="sub">One file, <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">client/fc.mjs</a>, on the official <code>@farcaster/hub-nodejs</code> library. It only ever talks to the node you give it.</p>
+  </div>
+  <div class="wrap">
+    <div class="grid2">
+      <div><h3><code>init</code></h3><p>Derives your custody address from the phrase, finds your FID on your node, creates an app key, submits the <code>KEY_ADD</code>, and waits until the key appears in a block. Only the app key is saved, in <code>~/.farcaster-in-3.json</code>.</p></div>
+      <div><h3><code>feed</code></h3><p>Reads who you follow, pulls their latest casts from your node, and merges them by time. Nothing ranked, nothing hidden, except what you choose to filter.</p></div>
+      <div><h3><code>cast</code> · <code>follow</code> · <code>like</code> · <code>recast</code></h3><p>Builds the message, signs it with the app key, and submits it to your node, which relays it to the validators.</p></div>
+      <div id="clients"><h3>Filter by client</h3><p>Every message is signed by an app key, and every app key records the FID of the app that requested it (<code>requestFid</code>). Your node knows which app each cast came from, without trusting the app.</p></div>
+    </div>
+  </div>
+  <div class="wrap narrow">
+    <div class="code"><pre>node fc.mjs apps dwr                  <span class="c"># which apps a user posts from</span>
+node fc.mjs feed --only-app &lt;app&gt;     <span class="c"># only casts made in that app</span>
+node fc.mjs feed --hide-app &lt;app&gt;     <span class="c"># everything except that app</span></pre></div>
+    <p><code>&lt;app&gt;</code> is the app's username or FID, as listed by <code>fc apps</code>.</p>
+  </div>
+</section>
+
+<section id="cost">
+  <div class="wrap narrow">
+    <div class="kicker">Cost</div>
+    <h2>What it costs</h2>
+    <p class="sub">All billed by the hour. New accounts usually come with credit, so trying it for a day is often free.</p>
+    <div class="table"><table>
+      <tr><th>Provider</th><th>Server + 2 TB</th><th>Per day</th></tr>
+      <tr><td>Hetzner (CX43 + 2 TB volume)</td><td class="num">~$176/mo</td><td class="num">~$5.80</td></tr>
+      <tr><td>AWS Lightsail (16 GB + 2 TB disk)</td><td class="num">~$289/mo</td><td class="num">~$9.50</td></tr>
+      <tr><td>Azure (D4s_v4, Standard SSD)</td><td class="num">~$294/mo</td><td class="num">~$9.70</td></tr>
+    </table></div>
+    <p>When you're done: <code>node scripts/destroy.mjs</code>.</p>
+
+    <h3 id="trouble" style="margin-top:44px">Troubleshooting</h3>
+    <details><summary><code>fc init</code> can't reach the node</summary><p>The API only comes up after the snapshot is restored. Run <code>fc-node-status</code> on the server, and check port 3383 is open (the provision script opens it).</p></details>
+    <details><summary>"nonce is not greater than stored nonce"</summary><p>Another key was added for your FID at the same moment. Run <code>init</code> again.</p></details>
+    <details><summary>My cast doesn't show up in other apps</summary><p>Give it a few seconds. If it never appears, the relay was dropped under load: post it again.</p></details>
+  </div>
+</section>
 
 <footer>
-  <p>Built for the farcaster-in-3 project. MIT licensed. Corrections welcome as <a href="https://github.com/Sats100M/farcaster-in-3/issues">issues</a> or PRs.</p>
+  <div class="wrap">
+    <span>farcaster-in-3 · MIT licensed</span>
+    <span><a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a> · <a href="https://github.com/Sats100M/farcaster-in-3/issues">Report a problem</a> · <a href="https://farcaster.xyz/sats100m">@sats100m</a></span>
+  </div>
 </footer>
-</main>
+
 <script>
-  for (const pre of document.querySelectorAll('pre')) {
+  for (const pre of document.querySelectorAll('.code pre')) {
     const b = document.createElement('button');
-    b.className = 'copy'; b.textContent = 'copy';
+    b.className = 'copy'; b.textContent = 'Copy';
     b.onclick = async () => {
-      try { await navigator.clipboard.writeText(pre.querySelector('code').innerText.trim()); b.textContent = 'copied'; }
-      catch { b.textContent = 'select it'; }
-      setTimeout(() => (b.textContent = 'copy'), 1500);
+      const text = [...pre.childNodes].map((n) => (n.classList?.contains('c') ? '' : n.textContent)).join('')
+        .split('\n').map((l) => l.replace(/\s+$/, '')).join('\n').trim();
+      try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
+      catch { b.textContent = 'Select it'; }
+      setTimeout(() => (b.textContent = 'Copy'), 1500);
     };
-    pre.appendChild(b);
+    pre.parentElement.appendChild(b);
   }
+  const root = document.documentElement;
+  try { const t = localStorage.getItem('theme'); if (t) root.dataset.theme = t; } catch {}
+  document.getElementById('theme').onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme: light)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('theme', root.dataset.theme); } catch {}
+  };
 </script>
 </body>
 </html>
