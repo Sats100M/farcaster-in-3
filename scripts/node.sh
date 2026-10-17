@@ -95,13 +95,34 @@ fi
 # --- Hand off to the official installer ---
 curl -fsSL -o snapchain.sh "$SNAPCHAIN_SH?t=$(date +%s)"
 chmod +x snapchain.sh
-./snapchain.sh upgrade < /dev/null
+# snapchain.sh ends by following the node's logs forever. Run it in the background,
+# wait for that log tail to start (meaning the node is up), then stop the tail.
+./snapchain.sh upgrade < /dev/null > upgrade.log 2>&1 &
+UPGRADE_PID=$!
+echo "Pulling images and starting the node (1-3 minutes)..."
+for _ in $(seq 1 120); do
+  pgrep -f "docker compose logs" >/dev/null && break
+  kill -0 "$UPGRADE_PID" 2>/dev/null || break
+  sleep 5
+done
+pkill -f "docker compose logs" || true
+wait "$UPGRADE_PID" || true
+if ! docker ps --format '{{.Names}}' | grep -q snapchain-snapchain; then
+  echo "The node did not start. Last lines of ~/snapchain/upgrade.log:" >&2
+  tail -n 20 upgrade.log >&2
+  exit 1
+fi
 
 # --- A small status helper ---
 cat > /usr/local/bin/fc-node-status <<'EOF'
 #!/usr/bin/env bash
 # Shows whether the read node has caught up. blockDelay = seconds each shard is behind.
-info=$(curl -s --max-time 5 localhost:3381/v1/info) || { echo "node not answering on :3381 yet (still starting or downloading snapshot)"; exit 1; }
+if ! info=$(curl -s --max-time 5 localhost:3381/v1/info); then
+  # The API only comes up after the snapshot is restored; show download progress instead.
+  progress=$(docker logs --tail 300 snapchain-snapchain-1 2>&1 | grep -o 'Progress: .*' | tail -n1)
+  echo "API not up yet. Snapshot download: ${progress:-starting...}"
+  exit 1
+fi
 echo "$info" | jq -r '"version " + .version,
   (.shardInfos[] | "shard \(.shardId)  height \(.maxHeight)  behind \(.blockDelay)s")'
 behind=$(echo "$info" | jq '[.shardInfos[].blockDelay | tonumber] | max')

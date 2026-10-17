@@ -33,11 +33,25 @@ const SIZES = [
 const account = requireLogin();
 console.log(`Azure subscription: ${account.name}`);
 
-if (az(['group', 'exists', '-n', GROUP])) {
-  const ip = az(['vm', 'show', '-d', '-g', GROUP, '-n', NAME, '--query', 'publicIps'], { quiet: true });
-  console.log(`You already have a node${ip ? ` at ${ip}` : ''} (resource group ${GROUP}).`);
+let existingIp;
+try {
+  existingIp = az(['vm', 'show', '-d', '-g', GROUP, '-n', NAME, '--query', 'publicIps'], { quiet: true });
+} catch {
+  // No VM yet (an earlier run may have left just the empty resource group).
+}
+if (existingIp !== undefined) {
+  console.log(`You already have a node${existingIp ? ` at ${existingIp}` : ''} (resource group ${GROUP}).`);
   console.log('Run `node scripts/destroy.mjs --provider azure` first if you want a fresh one.');
   process.exit(0);
+}
+
+// New subscriptions have the compute/network/storage services switched off until
+// registered; until then quotas read as empty. Registering is free.
+for (const ns of ['Microsoft.Compute', 'Microsoft.Network', 'Microsoft.Storage']) {
+  if (az(['provider', 'show', '-n', ns, '--query', 'registrationState'], { quiet: true }) !== 'Registered') {
+    console.log(`  enabling ${ns} on this subscription (one-time, ~1 min)...`);
+    az(['provider', 'register', '-n', ns, '--wait'], { json: false, quiet: true });
+  }
 }
 
 // --- Pick a VM size the subscription has quota for ---
@@ -112,14 +126,46 @@ const pubKeyArg = process.platform === 'win32' ? `"${KEY_PATH}.pub"` : `${KEY_PA
 az(['group', 'create', '-n', GROUP, '-l', LOCATION, '--tags', TAG], { quiet: true });
 console.log(`✓ resource group ${GROUP}`);
 
-console.log(`  creating VM (takes 1-3 minutes)...`);
-let vm;
-try {
-  vm = az([
+// Azure regularly runs out of a size in a region ("SkuNotAvailable"). Walk through
+// the sizes we have quota for, then nearby regions, until one is accepted.
+const regions = process.env.AZURE_LOCATION ? [LOCATION] : [LOCATION, 'eastus2', 'centralus', 'westus2', 'westus3', 'northeurope'];
+let vm, used;
+for (const region of regions) {
+  const quota = region === LOCATION ? usage : az(['vm', 'list-usage', '-l', region], { quiet: true });
+  const freeIn = (name) => {
+    const u = quota.find((x) => x.name.value === name);
+    return u ? Number(u.limit) - Number(u.currentValue) : 0;
+  };
+  if (freeIn('cores') < 4) continue;
+  for (const s of SIZES.filter((s) => freeIn(s.family) >= 4)) {
+    console.log(`  creating VM ${s.size} in ${region} (takes 1-3 minutes)...`);
+    try {
+      vm = createVm(region, s.size);
+      used = { region, size: s.size };
+      break;
+    } catch (err) {
+      if (!/SkuNotAvailable|capacity|ZonalAllocationFailed|AllocationFailed/i.test(err.stderr)) {
+        console.error(`\n✗ ${err.message}`);
+        console.error('  Clean up the partial setup with: node scripts/destroy.mjs --provider azure');
+        process.exit(1);
+      }
+      console.log(`  ${s.size} is sold out in ${region}, trying the next option`);
+    }
+  }
+  if (vm) break;
+}
+if (!vm) {
+  console.error('\n✗ No 4 vCPU / 16 GB size was available in any region tried. Try again later or set AZURE_LOCATION.');
+  console.error('  Clean up with: node scripts/destroy.mjs --provider azure');
+  process.exit(1);
+}
+
+function createVm(region, size) {
+  return az([
     'vm', 'create',
-    '-g', GROUP, '-n', NAME, '-l', LOCATION,
+    '-g', GROUP, '-n', NAME, '-l', region,
     '--image', 'Ubuntu2404',
-    '--size', pick.size,
+    '--size', size,
     '--admin-username', USER,
     '--ssh-key-values', pubKeyArg,
     '--os-disk-size-gb', '64',
@@ -130,16 +176,9 @@ try {
     '--nsg-rule', 'SSH',
     '--tags', TAG,
   ], { quiet: true });
-} catch (err) {
-  console.error(`\n✗ ${err.message}`);
-  if (/SkuNotAvailable|capacity|QuotaExceeded/i.test(err.stderr)) {
-    console.error(`  ${pick.size} is not available to you in ${LOCATION}. Try AZURE_LOCATION=westus2 or northeurope.`);
-  }
-  console.error('  Clean up the partial setup with: node scripts/destroy.mjs --provider azure');
-  process.exit(1);
 }
 const ip = vm.publicIpAddress;
-console.log(`✓ vm ${NAME} (${pick.size}) at ${ip}`);
+console.log(`✓ vm ${NAME} (${used.size}, ${used.region}) at ${ip}`);
 
 // 3381 HTTP API, 3382 gossip (UDP/QUIC), 3383 gRPC. '*' covers both TCP and UDP.
 az([
