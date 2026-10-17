@@ -2,6 +2,8 @@
 
 Run your own Farcaster read node and client in three commands. No API keys, no permission from anyone. You bring the server.
 
+Tutorial: https://sats100m.github.io/farcaster-in-3/
+
 ```
 node scripts/provision.mjs                 # 0. rent a server (AWS, Azure or Hetzner)
 ssh ... "curl -fsSL .../node.sh | sudo bash -s -- --fid <your fid>"   # 1. Snapchain read node
