@@ -40,6 +40,8 @@ If you run it on a provider or OS not listed, an issue saying it worked (or didn
 - New Azure subscriptions have Compute switched off until it's registered (the script does it), and 4 vCPU sizes are often sold out per region (the script falls back).
 - The official bootstrap reads its prompts from `/dev/tty`, and the installer ends by tailing logs forever, so piping it over SSH hangs. `node.sh` pre-fills `.env` and stops the tail once the node is up.
 
+Fixes sent upstream while building this: [snapchain#1040](https://github.com/farcasterxyz/snapchain/pull/1040) (README node requirements), [#1041](https://github.com/farcasterxyz/snapchain/pull/1041) (bootstrap needs a TTY), [#1042](https://github.com/farcasterxyz/snapchain/pull/1042) (profile URL).
+
 Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first. Details in [SECURITY.md](SECURITY.md).
 
 Want to add a provider or fix something? See [CONTRIBUTING.md](CONTRIBUTING.md).
