@@ -62,7 +62,7 @@ for (let i = 0; i < rest.length; i++) {
 
 const commands = { init, whoami, feed, cast, follow, unfollow, like, unlike, recast, apps };
 if (!commands[command]) {
-  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 11).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 13).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
   process.exit(command ? 1 : 0);
 }
 try {
