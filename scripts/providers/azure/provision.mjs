@@ -2,12 +2,12 @@
 //
 // Creates one resource group (farcaster-readnode) holding:
 //   - an Ubuntu 24.04 VM with 4 vCPU / 16 GB RAM (first size your quota allows)
-//   - a 1 TB Standard SSD data disk for the node's database
+//   - a 2 TB Standard SSD data disk for the node's database
 //   - a network security group opening SSH + the three Snapchain ports
 // Deleting the resource group (destroy.mjs) removes all of it.
 //
 // Usage:  az login, then  node scripts/provision.mjs --provider azure [--yes]
-// Env:    AZURE_LOCATION (default eastus)  DISK_GB (default 1024)  SERVER_NAME (default snapchain-1)
+// Env:    AZURE_LOCATION (default eastus)  DISK_GB (default 2048)  SERVER_NAME (default snapchain-1)
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -18,7 +18,7 @@ import { az, requireLogin, GROUP, TAG } from './az.mjs';
 
 // eastus sits next to most of Snapchain's bootstrap peers.
 const LOCATION = process.env.AZURE_LOCATION || 'eastus';
-const DISK_GB = Number(process.env.DISK_GB || 1024);
+const DISK_GB = Number(process.env.DISK_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
 const USER = 'azureuser';
 const KEY_PATH = join(homedir(), '.ssh', 'farcaster_node');

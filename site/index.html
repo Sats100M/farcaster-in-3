@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>farcaster-in-3: your own Farcaster node and client in three commands</title>
+<meta name="description" content="Run a Farcaster Snapchain read node and a client that posts through it. Three commands, no API keys.">
+<style>
+  :root {
+    --bg: #fbfaf8; --fg: #1d1b19; --muted: #6b665f; --line: #e6e2dc;
+    --code-bg: #f1eee9; --accent: #7c3aed; --warn-bg: #fff6e5; --warn-line: #f0c36d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141312; --fg: #ece9e4; --muted: #a29d95; --line: #2b2926;
+      --code-bg: #1e1c1a; --accent: #a78bfa; --warn-bg: #2a2214; --warn-line: #7a5d22;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 17px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 96px; }
+  header p.tag { color: var(--muted); margin-top: -8px; }
+  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.45rem; margin: 56px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.1rem; margin: 28px 0 4px; }
+  a { color: var(--accent); }
+  code { font: 0.88em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { position: relative; background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 18px; }
+  pre code { background: none; padding: 0; font-size: 0.85rem; white-space: pre; }
+  .copy {
+    position: absolute; top: 8px; right: 8px; font: 12px ui-sans-serif, system-ui; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; cursor: pointer;
+  }
+  .step { display: grid; grid-template-columns: 2.2rem 1fr; gap: 0 10px; margin: 22px 0; }
+  .step .n {
+    width: 2rem; height: 2rem; border-radius: 50%; background: var(--fg); color: var(--bg);
+    display: grid; place-items: center; font-weight: 700; margin-top: 2px;
+  }
+  .step > div { min-width: 0; }
+  .step h3 { margin: 0 0 2px; }
+  .note { background: var(--warn-bg); border-left: 3px solid var(--warn-line); padding: 12px 16px; border-radius: 4px; margin: 18px 0; }
+  .note p { margin: 0 0 8px; } .note p:last-child { margin: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  nav.toc { font-size: 0.95rem; columns: 2; column-gap: 24px; margin: 12px 0 0; }
+  nav.toc a { display: block; text-decoration: none; padding: 2px 0; }
+  @media (max-width: 560px) { nav.toc { columns: 1; } h1 { font-size: 1.7rem; } }
+  footer { color: var(--muted); font-size: 0.9rem; margin-top: 64px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Your own Farcaster, in three commands</h1>
+  <p class="tag">A Snapchain read node on a server you rent, and a client on your laptop that reads from it and posts through it. No API keys, nobody's permission.</p>
+  <p><a href="https://github.com/Sats100M/farcaster-in-3">Source on GitHub</a> (MIT)</p>
+</header>
+
+<h2 id="quickstart">Quickstart</h2>
+
+<p>You need: <a href="https://nodejs.org">Node.js 20+</a>, an account with a cloud provider (Azure, AWS or Hetzner, see <a href="#step0">which one</a>), and a Farcaster account that has storage, with its recovery phrase.</p>
+
+<div class="step"><div class="n">0</div><div>
+  <h3>Rent a server</h3>
+  <pre><code>git clone https://github.com/Sats100M/farcaster-in-3 && cd farcaster-in-3
+az login     # or: aws login, or put HCLOUD_TOKEN in .env for Hetzner
+node scripts/provision.mjs --provider azure</code></pre>
+  <p>Shows the price, asks, then creates a 4 vCPU / 16 GB server with a 2 TB disk and the right ports open. It prints command 1 for you.</p>
+</div></div>
+
+<div class="step"><div class="n">1</div><div>
+  <h3>Start a Snapchain read node</h3>
+  <pre><code>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server ip&gt; \
+  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid &lt;your fid&gt;"</code></pre>
+  <p>Installs Docker and the official Snapchain node, then starts syncing. The first sync downloads a ~470 GB snapshot and takes several hours. Check with <code>fc-node-status</code> on the server.</p>
+</div></div>
+
+<div class="step"><div class="n">2</div><div>
+  <h3>Run the client</h3>
+  <pre><code>cd client && npm install
+node fc.mjs init --node &lt;server ip&gt;</code></pre>
+  <p>Asks for your recovery phrase once, uses it to give this client its own app key, and forgets it. Then:</p>
+  <pre><code>node fc.mjs feed
+node fc.mjs cast "posting from my own node"
+node fc.mjs follow dwr
+node fc.mjs like 3/0x…
+node fc.mjs feed --hide-app &lt;app&gt;</code></pre>
+</div></div>
+
+<div class="note">
+  <p><strong>About the seed phrase.</strong> Your recovery phrase controls your account. Treat pasting it like running <code>rm -rf</code>: only do it in software you have read or trust. The client uses it in memory to sign one message and never stores or sends it, but you should check that yourself (<a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">it's one file</a>).</p>
+  <p>If you're trying this for the first time, use a test account, not your main one.</p>
+</div>
+
+<p>When you're done: <code>node scripts/destroy.mjs --provider azure</code> deletes everything so billing stops.</p>
+
+<nav class="toc">
+  <a href="#how">How Farcaster fits together</a>
+  <a href="#fid">FIDs and custody addresses</a>
+  <a href="#storage">Storage rent</a>
+  <a href="#snapchain">Snapchain, validators and read nodes</a>
+  <a href="#appkeys">App keys</a>
+  <a href="#step0">Step 0 in detail: the server</a>
+  <a href="#step1">Step 1 in detail: the node</a>
+  <a href="#step2">Step 2 in detail: the client</a>
+  <a href="#clients">Filtering by client</a>
+  <a href="#cost">What it costs</a>
+  <a href="#trouble">Troubleshooting</a>
+</nav>
+
+<h2 id="how">How Farcaster fits together</h2>
+<p>Farcaster splits a social network into three layers, run by different people:</p>
+<table>
+  <tr><th>Layer</th><th>What lives there</th><th>Where</th></tr>
+  <tr><td>Identity</td><td>Your account number (FID), which wallet owns it, your app keys if added onchain, storage you've paid for</td><td>Smart contracts on Optimism (an Ethereum L2)</td></tr>
+  <tr><td>Data</td><td>Casts, likes, follows, profile info, each one a small signed message</td><td>Snapchain, Farcaster's own network of nodes</td></tr>
+  <tr><td>Apps</td><td>The feed you scroll, the post button</td><td>Anyone's software, including the client in this repo</td></tr>
+</table>
+<p>No single app owns your account. If one app bans you or shuts down, your FID, followers and casts are still on the network, and any other client can show them. Running your own node and client is the most direct way to see that for yourself.</p>
+
+<h2 id="fid">FIDs and custody addresses</h2>
+<p>An <strong>FID</strong> (Farcaster ID) is your account number, an integer issued by the ID Registry contract on Optimism. Usernames like <code>@dwr</code> are a separate, changeable label that points to an FID.</p>
+<p>The <strong>custody address</strong> is the Ethereum wallet that owns the FID. Its private key comes from your recovery phrase (the standard Ethereum path, <code>m/44'/60'/0'/0/0</code>). Whoever holds it can transfer the account, add or remove app keys, and change the recovery address. That's why you only use it to authorize things, never for day-to-day posting.</p>
+<p>The client looks up which FID your custody address owns by asking your own node (<code>getIdRegistryOnChainEventByAddress</code>). Nodes follow the Optimism contracts, so no Ethereum RPC or API key is needed.</p>
+
+<h2 id="storage">Storage rent</h2>
+<p>Every message takes up space on every node, so accounts pay rent for it. Storage is bought in units on Optimism, and each unit lasts a year. One unit holds roughly 5,000 casts, 2,500 reactions and 2,500 follows. When you go over, the oldest messages of that type are pruned to make room.</p>
+<p>Most accounts made through the Farcaster app come with storage already. The client in this repo needs an account that has some: it can't post for an account with none.</p>
+
+<h2 id="snapchain">Snapchain, validators and read nodes</h2>
+<p>Snapchain is the network that orders and stores Farcaster messages. It's split into shards; your FID decides which shard your messages go to.</p>
+<p><strong>Validators</strong> are a small, known set of nodes that propose and vote on blocks. You can't become one by running software; they're chosen through an onchain config.</p>
+<p><strong>Read nodes</strong> run the same software with <code>read_node = true</code>. They follow the chain, keep the full state, and serve the same HTTP (port 3381) and gRPC (port 3383) APIs. Anyone can run one. That's what step 1 sets up.</p>
+<p>Can you post through a read node? Yes. A read node has no mempool of its own: when you submit a message it checks that it's valid and new, gossips it to the network, and keeps nothing. A validator picks it up from gossip and puts it in a block. So "success" from your node means <em>accepted and relayed</em>, not <em>included</em>. Under heavy load a relayed message can get lost and need resending; the client shows the cast's ID so you can check it landed.</p>
+
+<h2 id="appkeys">App keys</h2>
+<p>Apps don't post with your custody key. Each app gets its own <strong>app key</strong> (also called a signer): an Ed25519 key pair that can sign messages for your FID and nothing else.</p>
+<p>Since mid-2026, adding an app key doesn't need an Optimism transaction. The client sends a <code>KEY_ADD</code> message straight to Snapchain, carrying three signatures:</p>
+<ol>
+  <li>Your custody address signs an EIP-712 <code>KeyAdd</code>: which key, which message types it may sign, how long it lives, and a nonce.</li>
+  <li>The requesting app's custody address signs a <code>SignedKeyRequest</code> naming the app's FID. Here the client acts as its own app, so it's your custody address again.</li>
+  <li>The new key signs the message envelope, proving whoever added it actually holds it.</li>
+</ol>
+<p>The key in this client may only post, delete casts, react and follow. It can't add other keys or touch the account. It expires after 30 days without use, and every use pushes that back. The older onchain way (the KeyGateway contract) still works and those keys never expire, but it costs gas.</p>
+
+<h2 id="step0">Step 0 in detail: the server</h2>
+<p>Snapchain's stated requirements: 4 CPU cores, 16 GB RAM, a public IP, ports 3381–3383 open (3382 is UDP), and a lot of disk. The docs say 1.5–2 TB. We measured the first sync: the snapshot alone is about 5,700 chunks of ~82 MB, so ~470 GB compressed, and it stays on disk while it unpacks. Use 2 TB.</p>
+<p><code>provision.mjs</code> creates exactly that, tags everything, and <code>destroy.mjs</code> removes it all. Things we hit on each provider:</p>
+<table>
+  <tr><th>Provider</th><th>What to know</th></tr>
+  <tr><td>Azure</td><td>New subscriptions have Compute switched off until it's registered; the script does it. Free trials get 4 vCPUs per region, exactly enough. Popular sizes are often sold out in a region; the script tries other sizes and regions. Free-trial credit expires after 30 days.</td></tr>
+  <tr><td>AWS</td><td>Free-plan accounts can't launch anything this big. Upgrading keeps your credits, but accounts created with the new "Projects" experience still block EC2 and Lightsail until you activate advanced features. Lightsail (<code>--provider lightsail</code>) includes 6 TB of transfer.</td></tr>
+  <tr><td>Hetzner</td><td>Cheapest for an established account. Brand-new accounts can't create a 1 TB+ volume and can't request a higher limit yet.</td></tr>
+</table>
+
+<h2 id="step1">Step 1 in detail: the node</h2>
+<p><code>node.sh</code> wraps the official installer, <a href="https://github.com/farcasterxyz/snapchain">farcasterxyz/snapchain</a>'s <code>snapchain.sh</code>. It adds three things:</p>
+<ul>
+  <li>It formats and mounts the big data disk and keeps the node's database there.</li>
+  <li>It pre-answers the installer's prompts (it asks you to agree there are no rewards for running a node, and for an FID to pick an auto-upgrade day). The official bootstrap reads those from the keyboard, which breaks when piped over SSH.</li>
+  <li>It installs <code>fc-node-status</code>, which shows snapshot progress and then how far behind each shard is.</li>
+</ul>
+<p>A new node downloads a snapshot first (several hours), restores it, then catches up block by block. It's synced when every shard is a few seconds behind. A weekly cron job upgrades the node automatically.</p>
+<pre><code>fc-node-status                       # on the server
+curl http://&lt;ip&gt;:3381/v1/info         # from anywhere
+curl "http://&lt;ip&gt;:3381/v1/castsByFid?fid=3&amp;pageSize=3&amp;reverse=1"</code></pre>
+
+<h2 id="step2">Step 2 in detail: the client</h2>
+<p>The client is one file, <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs"><code>client/fc.mjs</code></a>, built on the official <code>@farcaster/hub-nodejs</code> library. It only ever talks to the node you give it.</p>
+<ul>
+  <li><code>init</code> derives your custody address from the phrase, finds your FID on your node, creates an app key, submits the <code>KEY_ADD</code>, and waits until the key shows up in a block. Only the app key is saved, in <code>~/.farcaster-in-3.json</code>.</li>
+  <li><code>feed</code> reads who you follow, fetches their latest casts from your node, and merges them by time. Nothing is ranked or hidden by anyone but you.</li>
+  <li><code>cast</code>, <code>follow</code>, <code>like</code>, <code>recast</code> build a message, sign it with the app key and submit it to your node, which relays it to the validators.</li>
+</ul>
+
+<h2 id="clients">Filtering by client</h2>
+<p>Every message is signed by an app key, and every app key records the FID of the app that requested it (<code>requestFid</code>). So your node knows which app each cast came from, without trusting the app.</p>
+<p><code>&lt;app&gt;</code> is the app's username or FID, as listed by <code>fc apps</code>.</p>
+<pre><code>node fc.mjs apps dwr                 # which apps a user posts from
+node fc.mjs feed --only-app &lt;app&gt;    # only casts made in that app
+node fc.mjs feed --hide-app &lt;app&gt;    # everything except that app</code></pre>
+
+<h2 id="cost">What it costs</h2>
+<table>
+  <tr><th>Provider</th><th>Server + 2 TB</th><th>Per day</th></tr>
+  <tr><td>Azure (D4s_v4, East US, Standard SSD)</td><td>~$294/mo</td><td>~$9.70</td></tr>
+  <tr><td>AWS Lightsail (16 GB + 2 TB disk)</td><td>~$289/mo</td><td>~$9.50</td></tr>
+  <tr><td>Hetzner (CX43 + 2 TB volume)</td><td>~$176/mo</td><td>~$5.80</td></tr>
+</table>
+<p>All of them bill by the hour, and new accounts usually come with credit. Try it for a day, then run <code>destroy.mjs</code>.</p>
+
+<h2 id="trouble">Troubleshooting</h2>
+<h3><code>fc init</code> says it can't reach the node</h3>
+<p>The API only comes up after the snapshot is restored. Run <code>fc-node-status</code> on the server. Also check port 3383 is open (the provision script opens it).</p>
+<h3>"nonce is not greater than stored nonce"</h3>
+<p>Another key was added for your FID at the same moment. Run <code>init</code> again.</p>
+<h3>My cast doesn't show up in other apps</h3>
+<p>Give it a few seconds. If it never appears, the relay was dropped under load: post it again.</p>
+
+<footer>
+  <p>Built for the farcaster-in-3 project. MIT licensed. Corrections welcome as <a href="https://github.com/Sats100M/farcaster-in-3/issues">issues</a> or PRs.</p>
+</footer>
+</main>
+<script>
+  for (const pre of document.querySelectorAll('pre')) {
+    const b = document.createElement('button');
+    b.className = 'copy'; b.textContent = 'copy';
+    b.onclick = async () => {
+      try { await navigator.clipboard.writeText(pre.querySelector('code').innerText.trim()); b.textContent = 'copied'; }
+      catch { b.textContent = 'select it'; }
+      setTimeout(() => (b.textContent = 'copy'), 1500);
+    };
+    pre.appendChild(b);
+  }
+</script>
+</body>
+</html>

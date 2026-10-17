@@ -6,11 +6,11 @@
 //
 // Creates, all tagged app=farcaster-readnode:
 //   - an Ubuntu 24.04 instance on the cheapest bundle with >= 4 vCPU / 16 GB RAM
-//   - a 1 TB block storage disk attached to it
+//   - a 2 TB block storage disk attached to it
 //   - public ports 22, 3381/tcp, 3382/udp, 3383/tcp
 //
 // Usage:  aws login, then  node scripts/provision.mjs --provider lightsail [--yes]
-// Env:    AWS_REGION (default us-east-1)  DISK_GB (default 1024)  SERVER_NAME (default snapchain-1)
+// Env:    AWS_REGION (default us-east-1)  DISK_GB (default 2048)  SERVER_NAME (default snapchain-1)
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { aws, requireLogin, REGION, TAG_KEY, TAG_VALUE } from '../aws/cli.mjs';
 
-const DISK_GB = Number(process.env.DISK_GB || 1024);
+const DISK_GB = Number(process.env.DISK_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
 const DISK_NAME = `${NAME}-data`;
 const ZONE = `${REGION}a`;

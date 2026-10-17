@@ -7,7 +7,7 @@
 //   - the cheapest server with >= 4 vCPU and >= 16 GB RAM in your location
 //
 // Usage:  node scripts/provision.mjs --provider hetzner [--yes]   (HCLOUD_TOKEN in .env)
-// Env:    LOCATION (default nbg1)  VOLUME_GB (default 1200)  SERVER_NAME (default snapchain-1)  ARCH (x86|arm|any, default x86)
+// Env:    LOCATION (default nbg1)  VOLUME_GB (default 2048)  SERVER_NAME (default snapchain-1)  ARCH (x86|arm|any, default x86)
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -18,7 +18,7 @@ import { createInterface } from 'node:readline/promises';
 import { api, requireToken, waitForAction, sleep, LABEL, LABELS } from './api.mjs';
 
 const LOCATION = process.env.LOCATION || 'nbg1';
-const VOLUME_GB = Number(process.env.VOLUME_GB || 1200);
+const VOLUME_GB = Number(process.env.VOLUME_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
 // x86 by default: Snapchain publishes arm64 images, but not every helper container
 // in its compose file is verified on ARM. ARCH=arm or ARCH=any to widen the search.

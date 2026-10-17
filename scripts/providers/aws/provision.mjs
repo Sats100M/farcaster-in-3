@@ -4,10 +4,10 @@
 //   - an EC2 key pair from ~/.ssh/farcaster_node (generated if missing)
 //   - a security group opening SSH + the three Snapchain ports
 //   - an Ubuntu 24.04 instance with 4 vCPU / 16 GB RAM
-//   - a 1 TB gp3 data volume, deleted together with the instance
+//   - a 2 TB gp3 data volume, deleted together with the instance
 //
 // Usage:  aws login, then  node scripts/provision.mjs --provider aws [--yes]
-// Env:    AWS_REGION (default us-east-1)  DISK_GB (default 1024)  INSTANCE_TYPE  SERVER_NAME
+// Env:    AWS_REGION (default us-east-1)  DISK_GB (default 2048)  INSTANCE_TYPE  SERVER_NAME
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { aws, requireLogin, REGION, TAG_KEY, TAG_VALUE, NAME_FILTER } from './cli.mjs';
 
-const DISK_GB = Number(process.env.DISK_GB || 1024);
+const DISK_GB = Number(process.env.DISK_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
 const USER = 'ubuntu';
 const KEY_NAME = 'farcaster-node';
