@@ -1,0 +1,19 @@
+{
+  "name": "fc-client",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "@farcaster/hub-nodejs": "^0.17.0",
+    "@scure/bip39": "^2.4.0",
+    "viem": "^2.57.7"
+  }
+}
