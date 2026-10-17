@@ -1,19 +1,21 @@
 {
-  "name": "fc-client",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "name": "farcaster-in-3-client",
+  "version": "0.1.0",
+  "description": "Minimal Farcaster client that reads from and posts through your own Snapchain read node",
   "type": "module",
-  "private": "true",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "fc": "./fc.mjs"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "fc": "node fc.mjs"
+  },
   "dependencies": {
     "@farcaster/hub-nodejs": "^0.17.0",
-    "@scure/bip39": "^2.4.0",
     "viem": "^2.57.7"
   }
 }

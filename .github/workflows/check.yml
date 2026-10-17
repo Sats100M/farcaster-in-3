@@ -1,0 +1,33 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: shellcheck node.sh
+        run: shellcheck scripts/node.sh
+
+      - name: syntax-check scripts
+        run: for f in scripts/*.mjs scripts/providers/*/*.mjs client/fc.mjs; do node --check "$f"; done
+
+      - name: client installs and starts
+        working-directory: client
+        run: |
+          npm ci
+          node fc.mjs | grep -q "fc init"
+
+      - name: provision refuses to run without credentials
+        run: |
+          out=$(node scripts/provision.mjs --provider hetzner 2>&1 || true)
+          echo "$out" | grep -q "Missing HCLOUD_TOKEN"

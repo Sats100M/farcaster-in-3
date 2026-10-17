@@ -1,5 +1,7 @@
 # farcaster-in-3
 
+[![check](https://github.com/Sats100M/farcaster-in-3/actions/workflows/check.yml/badge.svg)](https://github.com/Sats100M/farcaster-in-3/actions/workflows/check.yml)
+
 Run your own Farcaster read node and client in three commands. No API keys, no permission from anyone. You bring the server.
 
 Tutorial: https://sats100m.github.io/farcaster-in-3/
@@ -19,6 +21,17 @@ cd client && npm install && node fc.mjs init --node <server-ip>     # 2. your ow
 
 The client only talks to your node: reads over gRPC, and writes go to the same node, which relays them to the validators.
 
+## Status
+
+| | Tested |
+|---|---|
+| Step 0 on Azure | yes, from a fresh trial subscription |
+| Step 0 on Hetzner, AWS EC2, Lightsail | price check and API calls only; my accounts were blocked from creating servers (see below) |
+| Step 1 | yes, Ubuntu 24.04 on Azure, mainnet snapshot syncing |
+| Step 2 | `KEY_ADD` signing tested offline; end-to-end against a synced node next |
+
+If you run it on a provider or OS not listed, an issue saying it worked (or didn't) helps.
+
 ## Things I hit
 
 - The snapshot is ~5,700 chunks of ~82 MB (~470 GB compressed), and the chunks stay on disk while it unpacks. 1 TB isn't enough, use 2 TB.
@@ -27,6 +40,8 @@ The client only talks to your node: reads over gRPC, and writes go to the same n
 - New Azure subscriptions have Compute switched off until it's registered (the script does it), and 4 vCPU sizes are often sold out per region (the script falls back).
 - The official bootstrap reads its prompts from `/dev/tty`, and the installer ends by tailing logs forever, so piping it over SSH hangs. `node.sh` pre-fills `.env` and stops the tail once the node is up.
 
-Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first.
+Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first. Details in [SECURITY.md](SECURITY.md).
+
+Want to add a provider or fix something? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 MIT licensed.

@@ -2,3 +2,4 @@ node_modules/
 .env
 *.key
 client/.fc-client*
+posts.txt
