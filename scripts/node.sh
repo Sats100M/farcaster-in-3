@@ -48,7 +48,10 @@ if [[ ! -e ~/snapchain ]] && ! ls -d /mnt/HC_Volume_* >/dev/null 2>&1 && ! mount
   fi
 fi
 if [[ ! -e ~/snapchain ]]; then
-  VOLUME=$(ls -d /mnt/HC_Volume_* /mnt/data 2>/dev/null | head -n1 || true)
+  VOLUME=""
+  for d in /mnt/HC_Volume_* /mnt/data; do
+    [[ -d "$d" ]] && { VOLUME="$d"; break; }
+  done
   if [[ -n "$VOLUME" ]]; then
     mkdir -p "$VOLUME/snapchain"
     ln -s "$VOLUME/snapchain" ~/snapchain
