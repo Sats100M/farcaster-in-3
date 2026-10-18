@@ -15,8 +15,8 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: shellcheck node.sh
-        run: shellcheck scripts/node.sh
+      - name: shellcheck
+        run: shellcheck scripts/*.sh
 
       - name: syntax-check scripts
         run: for f in scripts/*.mjs scripts/providers/*/*.mjs client/fc.mjs; do node --check "$f"; done

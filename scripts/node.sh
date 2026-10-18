@@ -130,6 +130,12 @@ echo "$info" | jq -r '"version " + .version,
   (.shardInfos[] | "shard \(.shardId)  height \(.maxHeight)  behind \(.blockDelay)s")'
 behind=$(echo "$info" | jq '[.shardInfos[].blockDelay | tonumber] | max')
 if (( behind < 10 )); then echo "✓ in sync"; else echo "… syncing"; fi
+# More than a week behind after the snapshot step means the shard's snapshot
+# was skipped and it is syncing from genesis. See reload-shard.sh.
+echo "$info" | jq -r '.shardInfos[] | select((.blockDelay | tonumber) > 604800) | .shardId' | while read -r s; do
+  echo "! shard $s skipped its snapshot and is syncing from the start (weeks). Fix:"
+  echo "  curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/reload-shard.sh | sudo bash -s -- --shard $s"
+done
 EOF
 chmod +x /usr/local/bin/fc-node-status
 
