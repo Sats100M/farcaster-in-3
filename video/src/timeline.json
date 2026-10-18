@@ -1,82 +1,89 @@
 {
- "total": 58.796,
+ "total": 58.916,
  "scenes": [
   {
    "id": "bounty",
-   "text": "Saturday, Balaji posted a bounty.",
+   "text": "Balaji just posted a bounty. Two thousand and forty-eight dollars.",
    "start": 0.4,
-   "vo": 2.904,
-   "dur": 3.304
+   "vo": 4.68,
+   "dur": 5.08
   },
   {
    "id": "rules",
-   "text": "Twenty forty-eight dollars, to prove anyone can run their own Farcaster. No API keys. No permission.",
-   "start": 3.704,
-   "vo": 7.8,
-   "dur": 8.2
+   "text": "Prove anyone can run their own Farcaster. No API keys. No permission.",
+   "start": 5.48,
+   "vo": 6.408,
+   "dur": 6.808
   },
   {
-   "id": "tried",
-   "text": "So I tried.",
-   "start": 11.904,
-   "vo": 1.872,
-   "dur": 2.172
+   "id": "network",
+   "text": "Farcaster is a social network nobody owns. It lives on nodes anyone can run.",
+   "start": 12.288,
+   "vo": 5.832,
+   "dur": 6.232
   },
   {
-   "id": "blocked",
-   "text": "Hetzner said no. AWS said no. Azure was sold out, until it wasn't.",
-   "start": 14.076,
-   "vo": 6.624,
-   "dur": 7.224
+   "id": "three",
+   "text": "So I turned it into three commands.",
+   "start": 18.52,
+   "vo": 2.568,
+   "dur": 2.868
   },
   {
-   "id": "download",
-   "text": "Eleven hours later, half a terabyte of Farcaster.",
-   "start": 21.3,
-   "vo": 3.528,
-   "dur": 3.928
+   "id": "server",
+   "text": "First, rent a server. A few dollars a day.",
+   "start": 21.388,
+   "vo": 4.056,
+   "dur": 4.356
+  },
+  {
+   "id": "node",
+   "text": "Then run your own node. It downloads the entire network.",
+   "start": 25.744,
+   "vo": 4.584,
+   "dur": 4.884
   },
   {
    "id": "behind",
-   "text": "Except one shard. Five hundred and seventy days behind.",
-   "start": 25.228,
-   "vo": 4.488,
-   "dur": 5.088
+   "text": "One shard came back five hundred and seventy days behind.",
+   "start": 30.628,
+   "vo": 3.648,
+   "dur": 4.148
   },
   {
    "id": "fix",
-   "text": "Its snapshot vanished mid-download. So I fixed it, and sent the fix upstream.",
-   "start": 30.316,
-   "vo": 5.76,
-   "dur": 6.26
+   "text": "So I fixed it, and sent the fix upstream.",
+   "start": 34.776,
+   "vo": 3.144,
+   "dur": 3.444
   },
   {
    "id": "sync",
    "text": "An hour later, fully in sync.",
-   "start": 36.576,
+   "start": 38.22,
    "vo": 2.712,
-   "dur": 3.312
+   "dur": 3.212
   },
   {
    "id": "key",
-   "text": "Then my seed phrase, once. The client made its own key. No gas.",
-   "start": 39.888,
-   "vo": 6.312,
-   "dur": 6.812
+   "text": "Then your own client. It makes its own key. No gas.",
+   "start": 41.432,
+   "vo": 5.328,
+   "dur": 5.728
   },
   {
    "id": "cast",
    "text": "And I posted. From my own node.",
-   "start": 46.7,
+   "start": 47.16,
    "vo": 3.384,
-   "dur": 5.084
+   "dur": 4.684
   },
   {
    "id": "end",
-   "text": "Three commands. Your own Farcaster. Your turn.",
-   "start": 51.784,
-   "vo": 5.112,
-   "dur": 6.612
+   "text": "Your turn. Open source, step by step. Link below.",
+   "start": 51.844,
+   "vo": 5.472,
+   "dur": 6.672
   }
  ]
 }

@@ -20,17 +20,18 @@ RATE = "+16%"
 
 # id, narration, extra seconds of picture after the line ends
 SCENES = [
-    ("bounty",   "Saturday, Balaji posted a bounty.", 0.4),
-    ("rules",    "Twenty forty-eight dollars, to prove anyone can run their own Farcaster. No API keys. No permission.", 0.4),
-    ("tried",    "So I tried.", 0.3),
-    ("blocked",  "Hetzner said no. AWS said no. Azure was sold out, until it wasn't.", 0.6),
-    ("download", "Eleven hours later, half a terabyte of Farcaster.", 0.4),
-    ("behind",   "Except one shard. Five hundred and seventy days behind.", 0.6),
-    ("fix",      "Its snapshot vanished mid-download. So I fixed it, and sent the fix upstream.", 0.5),
-    ("sync",     "An hour later, fully in sync.", 0.6),
-    ("key",      "Then my seed phrase, once. The client made its own key. No gas.", 0.5),
-    ("cast",     "And I posted. From my own node.", 1.7),
-    ("end",      "Three commands. Your own Farcaster. Your turn.", 1.5),
+    ("bounty",  "Balaji just posted a bounty. Two thousand and forty-eight dollars.", 0.4),
+    ("rules",   "Prove anyone can run their own Farcaster. No API keys. No permission.", 0.4),
+    ("network", "Farcaster is a social network nobody owns. It lives on nodes anyone can run.", 0.4),
+    ("three",   "So I turned it into three commands.", 0.3),
+    ("server",  "First, rent a server. A few dollars a day.", 0.3),
+    ("node",    "Then run your own node. It downloads the entire network.", 0.3),
+    ("behind",  "One shard came back five hundred and seventy days behind.", 0.5),
+    ("fix",     "So I fixed it, and sent the fix upstream.", 0.3),
+    ("sync",    "An hour later, fully in sync.", 0.5),
+    ("key",     "Then your own client. It makes its own key. No gas.", 0.4),
+    ("cast",    "And I posted. From my own node.", 1.3),
+    ("end",     "Your turn. Open source, step by step. Link below.", 1.2),
 ]
 
 
