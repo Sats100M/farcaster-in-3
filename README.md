@@ -27,8 +27,8 @@ The client only talks to your node: reads over gRPC, and writes go to the same n
 |---|---|
 | Step 0 on Azure | yes, from a fresh trial subscription |
 | Step 0 on Hetzner, AWS EC2, Lightsail | price check and API calls only; my accounts were blocked from creating servers (see below) |
-| Step 1 | yes, Ubuntu 24.04 on Azure, mainnet snapshot syncing |
-| Step 2 | `KEY_ADD` signing tested offline; end-to-end against a synced node next |
+| Step 1 | yes, Ubuntu 24.04 on Azure, synced to mainnet |
+| Step 2 | yes, Windows 11, Node 22: `init` added a gasless app key, then [this cast](https://farcaster.xyz/sats100m/0xfdc3e931) went out through the node |
 
 If you run it on a provider or OS not listed, an issue saying it worked (or didn't) helps.
 
