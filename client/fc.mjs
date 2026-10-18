@@ -60,19 +60,6 @@ for (let i = 0; i < rest.length; i++) {
   else args.push(rest[i]);
 }
 
-const commands = { init, whoami, feed, cast, follow, unfollow, like, unlike, recast, apps };
-if (!commands[command]) {
-  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 13).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
-  process.exit(command ? 1 : 0);
-}
-try {
-  await commands[command]();
-} catch (err) {
-  console.error(`✗ ${err.message}`);
-  process.exitCode = 1;
-}
-process.exit();
-
 // ---------------------------------------------------------------------------
 
 function nodeClient(host) {
@@ -169,6 +156,7 @@ const appOf = (msg) => appByKey.get(bytesToHexString(msg.signer)._unsafeUnwrap()
 
 function ago(farcasterTs) {
   const s = (Date.now() - fromFarcasterTime(farcasterTs)._unsafeUnwrap()) / 1000;
+  if (s < 0) return 'future-dated'; // timestamps are set by the author's client
   if (s < 60) return `${Math.floor(s)}s`;
   if (s < 3600) return `${Math.floor(s / 60)}m`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
@@ -328,3 +316,16 @@ async function apps() {
   }
   console.log('\nFilter your feed with: fc feed --only-app <app>   or   fc feed --hide-app <app>');
 }
+
+const commands = { init, whoami, feed, cast, follow, unfollow, like, unlike, recast, apps };
+if (!commands[command]) {
+  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 13).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+  process.exit(command ? 1 : 0);
+}
+try {
+  await commands[command]();
+} catch (err) {
+  console.error(`✗ ${err.message}`);
+  process.exitCode = 1;
+}
+process.exit();
