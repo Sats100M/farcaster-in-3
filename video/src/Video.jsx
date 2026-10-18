@@ -2,13 +2,16 @@
 // Timing comes from src/timeline.json (written by scripts/gen_audio.py from the
 // voiceover lengths). Every error, number and line of output shown is real.
 import React from 'react';
-import { AbsoluteFill, Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, Easing } from 'remotion';
+import { AbsoluteFill, Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, Easing, getInputProps } from 'remotion';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import timeline from './timeline.json';
 
 const { fontFamily: sans } = loadInter('normal', { weights: ['400', '500', '600', '700', '800'], subsets: ['latin'] });
 const { fontFamily: mono } = loadMono('normal', { weights: ['400', '700'], subsets: ['latin'] });
+
+// --props='{"audio":false}' renders picture only, for adding a music track in an editor.
+const AUDIO = getInputProps().audio !== false;
 
 const FPS = 30;
 export const DURATION = Math.ceil(timeline.total * FPS);
@@ -25,12 +28,12 @@ export const Video = () => {
   const light = interpolate(f, [fr(BRIGHT_FROM), fr(BRIGHT_FROM) + 8], [0, 1], clamp);
   return (
     <AbsoluteFill style={{ background: mix(C.night, C.paper, light), fontFamily: sans }}>
-      <Audio src={staticFile('music.wav')} volume={musicVolume} />
+      {AUDIO && <Audio src={staticFile('music.wav')} volume={musicVolume} />}
       {timeline.scenes.map((s) => {
         const Scene = SCENES[s.id];
         return (
           <Sequence key={s.id} from={fr(s.start)} durationInFrames={fr(s.dur) + 6}>
-            <Audio src={staticFile(`vo_${s.id}.mp3`)} />
+            {AUDIO && <Audio src={staticFile(`vo_${s.id}.mp3`)} />}
             <Scene dur={fr(s.dur)} vo={fr(s.vo)} />
           </Sequence>
         );
@@ -54,6 +57,7 @@ function mix(a, b, p) {
 }
 
 function Sfx({ name, at = 0, volume = 1, len = fr(2) }) {
+  if (!AUDIO) return null;
   return (
     <Sequence from={at} durationInFrames={len}>
       <Audio src={staticFile(`sfx_${name}.wav`)} volume={volume} />
@@ -358,7 +362,7 @@ function Captions() {
   const shown = Math.ceil(interpolate(f, [fr(s.start), fr(s.start + s.vo)], [1, words.length], clamp));
   return (
     <AbsoluteFill style={{ justifyContent: 'flex-end', padding: '0 70px 300px' }}>
-      <div style={{ fontSize: 40, lineHeight: 1.35, fontWeight: 600, color: light ? C.ink : '#fff', textAlign: 'center' }}>
+      <div style={{ fontSize: 50, lineHeight: 1.3, fontWeight: 700, color: light ? C.ink : '#fff', textAlign: 'center' }}>
         {words.map((w, i) => <span key={i} style={{ opacity: i < shown ? 1 : 0.25 }}>{w} </span>)}
       </div>
     </AbsoluteFill>
