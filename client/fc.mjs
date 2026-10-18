@@ -17,6 +17,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { mnemonicToAccount } from 'viem/accounts';
+import { bytesToHex, decodeAbiParameters } from 'viem';
 import {
   getInsecureHubRpcClient,
   FarcasterNetwork,
@@ -148,9 +149,28 @@ async function loadKeys(client, fid) {
   if (appByKey.has(`loaded:${fid}`)) return;
   const res = await client.getSignersByFid({ fid, requesterFids: [] });
   if (res.isOk()) {
-    for (const s of res.value.signers) appByKey.set(bytesToHexString(s.key)._unsafeUnwrap(), s.requestFid ?? 0);
+    for (const s of res.value.signers) appByKey.set(bytesToHexString(s.key)._unsafeUnwrap(), requestFidOf(s));
   }
   appByKey.set(`loaded:${fid}`, true);
+}
+// Gasless keys (KEY_ADD) carry requestFid directly. Keys added onchain carry it
+// inside the ABI-encoded SignedKeyRequest metadata of the KeyRegistry event.
+function requestFidOf(signer) {
+  if (signer.requestFid) return signer.requestFid;
+  const metadata = signer.onchainEvent?.signerEventBody?.metadata;
+  if (!metadata?.length) return 0;
+  try {
+    const [{ requestFid }] = decodeAbiParameters(
+      [{ type: 'tuple', components: [
+        { name: 'requestFid', type: 'uint256' }, { name: 'requestSigner', type: 'address' },
+        { name: 'signature', type: 'bytes' }, { name: 'deadline', type: 'uint256' },
+      ] }],
+      bytesToHex(metadata)
+    );
+    return Number(requestFid);
+  } catch {
+    return 0;
+  }
 }
 const appOf = (msg) => appByKey.get(bytesToHexString(msg.signer)._unsafeUnwrap()) ?? 0;
 
@@ -260,6 +280,7 @@ async function feed() {
     await Promise.all([...new Set(casts.map((c) => c.data.fid))].map((f) => loadKeys(client, f)));
     if (onlyApp) casts = casts.filter((c) => appOf(c) === onlyApp);
     if (hideApp) casts = casts.filter((c) => appOf(c) !== hideApp);
+    if (!casts.length) return console.log('No recent casts left after the app filter. See which apps people use with: fc apps <username>');
   }
 
   for (const c of casts.slice(0, limit)) {
