@@ -1,0 +1,16 @@
+{
+  "name": "farcaster-in-3-video",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "studio": "remotion studio src/index.jsx",
+    "render": "remotion render src/index.jsx Vertical out/farcaster-in-3.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.536",
+    "@remotion/google-fonts": "^4.0.536",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.536"
+  }
+}
