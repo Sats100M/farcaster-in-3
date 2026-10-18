@@ -47,7 +47,7 @@ export const Video = () => {
 // Music sits under the voice: down while someone is talking, up in the gaps.
 function musicVolume(f) {
   const talking = timeline.scenes.some((s) => f >= fr(s.start) - 4 && f <= fr(s.start + s.vo) + 4);
-  return talking ? 0.22 : 0.5;
+  return talking ? 0.2 : 0.6;
 }
 
 function mix(a, b, p) {
@@ -56,14 +56,6 @@ function mix(a, b, p) {
   return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * p)).join(',')})`;
 }
 
-function Sfx({ name, at = 0, volume = 1, len = fr(2) }) {
-  if (!AUDIO) return null;
-  return (
-    <Sequence from={at} durationInFrames={len}>
-      <Audio src={staticFile(`sfx_${name}.wav`)} volume={volume} />
-    </Sequence>
-  );
-}
 
 function Pop({ at = 0, y = 50, children, style }) {
   const f = useCurrentFrame();
@@ -86,7 +78,6 @@ const SCENES = {
     const amount = interpolate(f, [8, 48], [0, 2048], { ...clamp, easing: Easing.out(Easing.cubic) });
     return (
       <Center>
-        <Sfx name="whoosh" at={4} />
         <Pop at={2}><div style={{ color: C.grey, fontSize: 44, fontWeight: 600 }}>balajis.eth · Saturday</div></Pop>
         <Pop at={8}><div style={{ color: '#fff', fontSize: 260, fontWeight: 800, letterSpacing: -10, lineHeight: 1 }}>${num(amount)}</div></Pop>
         <Pop at={30}><div style={{ color: '#fff', fontSize: 58, fontWeight: 700, letterSpacing: 6, marginTop: 20 }}>FOR FARCASTER CLIENTS</div></Pop>
@@ -104,7 +95,6 @@ const SCENES = {
       <Center>
         {lines.map((l) => (
           <React.Fragment key={l.t}>
-            <Sfx name="whoosh" at={Math.round(vo * l.at)} volume={0.6} />
             <Pop at={Math.round(vo * l.at)}>
               <div style={{ color: l.accent ? '#fff' : C.grey, fontSize: l.accent ? 120 : 76, fontWeight: 800, letterSpacing: -3, lineHeight: 1.1, marginBottom: 24 }}>{l.t}</div>
             </Pop>
@@ -125,14 +115,14 @@ const SCENES = {
     );
   },
 
-  blocked() {
+  blocked({ vo }) {
     const f = useCurrentFrame();
     const hits = [
-      { at: fr(0.15), who: 'Hetzner', msg: '403 resource_limit_exceeded' },
-      { at: fr(1.35), who: 'AWS', msg: 'explicit deny in a service control policy' },
-      { at: fr(2.7), who: 'Azure · D4s_v5', msg: 'SkuNotAvailable' },
-      { at: fr(3.5), who: 'Azure · D4as_v5', msg: 'SkuNotAvailable' },
-      { at: fr(5.2), who: 'Azure · D4s_v4', msg: 'running', ok: true },
+      { at: Math.round(vo * 0.02), who: 'Hetzner', msg: '403 resource_limit_exceeded' },
+      { at: Math.round(vo * 0.2), who: 'AWS', msg: 'explicit deny in a service control policy' },
+      { at: Math.round(vo * 0.42), who: 'Azure · D4s_v5', msg: 'SkuNotAvailable' },
+      { at: Math.round(vo * 0.56), who: 'Azure · D4as_v5', msg: 'SkuNotAvailable' },
+      { at: Math.round(vo * 0.86), who: 'Azure · D4s_v4', msg: 'running', ok: true },
     ];
     const lastErr = Math.max(...hits.filter((h) => !h.ok && f >= h.at).map((h) => h.at), -100);
     const shake = Math.sin(f * 2.7) * 16 * Math.exp(-(f - lastErr) / 4);
@@ -143,7 +133,6 @@ const SCENES = {
         <Center style={{ transform: `translateX(${shake}px)` }}>
           {hits.map((h) => (
             <React.Fragment key={h.who}>
-              <Sfx name={h.ok ? 'success' : 'error'} at={h.at} volume={h.ok ? 0.9 : 0.7} />
               {f >= h.at && (
                 <Pop at={h.at} y={30} style={{ marginBottom: 26 }}>
                   <div style={{ background: '#1c1c1e', border: `2px solid ${h.ok ? C.green : C.red}`, borderRadius: 28, padding: '28px 36px', display: 'flex', gap: 28, alignItems: 'center' }}>
@@ -167,7 +156,6 @@ const SCENES = {
     const p = interpolate(f, [6, vo], [0, 1], { ...clamp, easing: Easing.inOut(Easing.quad) });
     return (
       <Center>
-        <Sfx name="whoosh" at={2} volume={0.5} />
         <Pop at={0}><div style={{ color: C.grey, fontSize: 44, fontWeight: 600, marginBottom: 30 }}>Downloading the network</div></Pop>
         <div style={{ color: '#fff', fontSize: 200, fontWeight: 800, letterSpacing: -8, lineHeight: 1 }}>{num(470 * p)} GB</div>
         <div style={{ height: 22, background: '#2c2c2e', borderRadius: 11, marginTop: 50, overflow: 'hidden' }}>
@@ -189,8 +177,6 @@ const SCENES = {
     return (
       <AbsoluteFill>
         <AbsoluteFill style={{ background: `radial-gradient(circle, transparent 40%, ${C.red})`, opacity: f >= land ? 0.35 + pulse : 0 }} />
-        <Sfx name="error" at={land} />
-        <Sfx name="impact" at={land} volume={0.6} />
         <Center>
           <Shard n={1} behind="4s" ok />
           <Shard n={2} behind="0s" ok />
@@ -211,7 +197,6 @@ const SCENES = {
           { out: '✓ all 371 chunks verified', at: 40, ok: true },
           { out: '✓ shard 0 reloaded', at: 52, ok: true },
         ]} />
-        <Sfx name="whoosh" at={prAt} />
         <Pop at={prAt} style={{ marginTop: 50 }}>
           <div style={{ background: '#1c1c1e', borderRadius: 28, padding: '34px 38px', border: '2px solid #3a3a3c' }}>
             <div style={{ color: C.grey, fontSize: 34, fontFamily: mono }}>farcasterxyz/snapchain  #1045</div>
@@ -230,8 +215,6 @@ const SCENES = {
     const done = f >= doneAt;
     return (
       <Center>
-        <Sfx name="impact" at={0} volume={0.8} />
-        <Sfx name="success" at={doneAt} />
         <Shard n={1} behind="1s" ok light />
         <Shard n={2} behind="0s" ok light />
         <div style={{ marginTop: 60, color: C.grey, fontSize: 46, fontWeight: 600, fontFamily: mono }}>shard 0 behind</div>
@@ -249,7 +232,6 @@ const SCENES = {
           { out: 'Seed phrase (hidden): ', at: 36, dots: true },
           { out: '✓ App key 0x931335d7d936891e… is live.', at: Math.round(vo * 0.5), ok: true },
         ]} />
-        <Sfx name="success" at={Math.round(vo * 0.5)} volume={0.7} />
         <div style={{ display: 'flex', gap: 20, marginTop: 50, flexWrap: 'wrap' }}>
           {['No gas', 'No wallet transaction'].map((t, i) => (
             <Pop key={t} at={Math.round(vo * (0.68 + i * 0.14))}>
@@ -271,8 +253,6 @@ const SCENES = {
           { cmd: 'node fc.mjs cast "Sent from my own Farcaster node. No API keys. https://sats100m.github.io/farcaster-in-3/"', at: 0, speed: 2.4 },
           { out: '✓ Cast sent: 3355244/0xfdc3e931…', at: castAt - 6, ok: true },
         ]} />
-        <Sfx name="impact" at={castAt} />
-        <Sfx name="success" at={castAt} />
         {f >= castAt && (
           <Pop at={castAt} y={80} style={{ marginTop: 44 }}>
             <div style={{ background: '#fff', borderRadius: 34, padding: '38px 40px', boxShadow: `0 30px 90px rgba(10,132,255,${0.15 + glow * 0.5})`, border: '1px solid #e5e5ea' }}>
@@ -299,6 +279,7 @@ const SCENES = {
         <Pop at={Math.round(vo * 0.6)} style={{ marginTop: 80 }}>
           <div style={{ color: C.blue, fontSize: 52, fontWeight: 700 }}>sats100m.github.io/farcaster-in-3</div>
           <div style={{ color: C.grey, fontSize: 40, marginTop: 14 }}>Open source · MIT · @sats100m</div>
+          <div style={{ color: '#aeaeb2', fontSize: 26, marginTop: 40 }}>Music: Kevin MacLeod (incompetech.com), CC BY 4.0</div>
         </Pop>
         <Pop at={Math.round(vo * 0.85)} style={{ marginTop: 70 }}>
           <div style={{ display: 'inline-block', background: C.ink, color: '#fff', borderRadius: 60, padding: '26px 56px', fontSize: 56, fontWeight: 800 }}>Your turn.</div>
@@ -327,9 +308,6 @@ function Terminal({ lines, dark }) {
       <div style={{ display: 'flex', gap: 14, marginBottom: 28 }}>
         {['#ff5f57', '#febc2e', '#28c840'].map((c) => <div key={c} style={{ width: 20, height: 20, borderRadius: 10, background: c }} />)}
       </div>
-      {lines.filter((l) => l.cmd).map((l) => (
-        <Sfx key={l.cmd} name="typing" at={l.at} volume={0.5} len={Math.ceil(l.cmd.length / (l.speed ?? 1.4))} />
-      ))}
       <div style={{ fontFamily: mono, fontSize: 34, lineHeight: 1.5, color: '#f5f5f7', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
         {lines.map((l, i) => {
           if (f < l.at) return null;

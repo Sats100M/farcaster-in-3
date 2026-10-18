@@ -1,82 +1,82 @@
 {
- "total": 57.5,
+ "total": 58.796,
  "scenes": [
   {
    "id": "bounty",
    "text": "Saturday, Balaji posted a bounty.",
-   "start": 0.6,
-   "vo": 2.568,
-   "dur": 3.068
+   "start": 0.4,
+   "vo": 2.904,
+   "dur": 3.304
   },
   {
    "id": "rules",
-   "text": "Two thousand and forty-eight dollars, to prove anyone can run their own Farcaster. No API keys. No permission.",
-   "start": 3.668,
-   "vo": 7.344,
-   "dur": 7.944
+   "text": "Twenty forty-eight dollars, to prove anyone can run their own Farcaster. No API keys. No permission.",
+   "start": 3.704,
+   "vo": 7.8,
+   "dur": 8.2
   },
   {
    "id": "tried",
    "text": "So I tried.",
-   "start": 11.612,
+   "start": 11.904,
    "vo": 1.872,
    "dur": 2.172
   },
   {
    "id": "blocked",
-   "text": "Hetzner said no. AWS said no. Azure was sold out, size after size, until one wasn't.",
-   "start": 13.784,
-   "vo": 6.096,
-   "dur": 6.896
+   "text": "Hetzner said no. AWS said no. Azure was sold out, until it wasn't.",
+   "start": 14.076,
+   "vo": 6.624,
+   "dur": 7.224
   },
   {
    "id": "download",
-   "text": "Eleven hours later, my node had downloaded half a terabyte of Farcaster.",
-   "start": 20.68,
-   "vo": 4.56,
-   "dur": 5.06
+   "text": "Eleven hours later, half a terabyte of Farcaster.",
+   "start": 21.3,
+   "vo": 3.528,
+   "dur": 3.928
   },
   {
    "id": "behind",
    "text": "Except one shard. Five hundred and seventy days behind.",
-   "start": 25.74,
-   "vo": 3.24,
-   "dur": 4.24
+   "start": 25.228,
+   "vo": 4.488,
+   "dur": 5.088
   },
   {
    "id": "fix",
-   "text": "Its snapshot had vanished mid-download. So I wrote a fix, and sent it to the Snapchain team.",
-   "start": 29.98,
-   "vo": 5.424,
-   "dur": 6.024
+   "text": "Its snapshot vanished mid-download. So I fixed it, and sent the fix upstream.",
+   "start": 30.316,
+   "vo": 5.76,
+   "dur": 6.26
   },
   {
    "id": "sync",
-   "text": "An hour later, every shard was in sync.",
-   "start": 36.004,
-   "vo": 2.784,
-   "dur": 3.584
+   "text": "An hour later, fully in sync.",
+   "start": 36.576,
+   "vo": 2.712,
+   "dur": 3.312
   },
   {
    "id": "key",
-   "text": "Then I typed my seed phrase, once. The client made its own key. No gas. No wallet transaction.",
-   "start": 39.588,
-   "vo": 6.528,
-   "dur": 7.128
+   "text": "Then my seed phrase, once. The client made its own key. No gas.",
+   "start": 39.888,
+   "vo": 6.312,
+   "dur": 6.812
   },
   {
    "id": "cast",
    "text": "And I posted. From my own node.",
-   "start": 46.716,
-   "vo": 2.064,
-   "dur": 4.264
+   "start": 46.7,
+   "vo": 3.384,
+   "dur": 5.084
   },
   {
    "id": "end",
-   "text": "Three commands. Your own Farcaster. Link's below. Your turn.",
-   "start": 50.98,
-   "vo": 4.32,
-   "dur": 6.12
+   "text": "Three commands. Your own Farcaster. Your turn.",
+   "start": 51.784,
+   "vo": 5.112,
+   "dur": 6.612
   }
  ]
 }
