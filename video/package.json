@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "studio": "remotion studio src/index.jsx",
-    "render": "remotion render src/index.jsx Vertical out/farcaster-in-3.mp4"
+    "audio": "python scripts/gen_audio.py",
+    "render": "remotion render src/index.jsx Vertical out/raw.mp4 && ffmpeg -y -v error -i out/raw.mp4 -c:v copy -af loudnorm=I=-14:TP=-1.5:LRA=11 -c:a aac -b:a 192k -ar 48000 out/farcaster-in-3.mp4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.536",
