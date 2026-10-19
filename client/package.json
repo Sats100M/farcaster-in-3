@@ -12,7 +12,8 @@
     "node": ">=20.12"
   },
   "scripts": {
-    "fc": "node fc.mjs"
+    "fc": "node fc.mjs",
+    "test": "node --test"
   },
   "dependencies": {
     "@farcaster/hub-nodejs": "^0.17.0",

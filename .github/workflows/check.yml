@@ -19,12 +19,13 @@ jobs:
         run: shellcheck scripts/*.sh
 
       - name: syntax-check scripts
-        run: for f in scripts/*.mjs scripts/providers/*/*.mjs client/fc.mjs; do node --check "$f"; done
+        run: for f in scripts/*.mjs scripts/providers/*/*.mjs client/*.mjs; do node --check "$f"; done
 
-      - name: client installs and starts
+      - name: client installs, passes its tests and starts
         working-directory: client
         run: |
           npm ci
+          npm test
           node fc.mjs | grep -q "fc init"
 
       - name: provision refuses to run without credentials

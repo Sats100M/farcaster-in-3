@@ -17,49 +17,25 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { mnemonicToAccount } from 'viem/accounts';
-import { bytesToHex, decodeAbiParameters } from 'viem';
 import {
   getInsecureHubRpcClient,
-  FarcasterNetwork,
-  MessageType,
   ReactionType,
   UserDataType,
   NobleEd25519Signer,
-  ViemLocalEip712Signer,
-  makeKeyAddBody,
-  makeKeyAdd,
   makeCastAdd,
   makeLinkAdd,
   makeLinkRemove,
   makeReactionAdd,
   makeReactionRemove,
-  getFarcasterTime,
-  fromFarcasterTime,
   bytesToHexString,
   hexStringToBytes,
 } from '@farcaster/hub-nodejs';
+import { NETWORK, parseArgs, parseCastId, requestFidOf, ago, buildKeyAdd } from './lib.mjs';
 
 const CONFIG = join(homedir(), '.farcaster-in-3.json');
-const NETWORK = FarcasterNetwork.MAINNET;
-// What this client's key may sign. KEY_ADD/KEY_REMOVE can never be delegated, so
-// a leaked app key can post as you but can't add keys, move the account or funds.
-const SCOPES = [
-  MessageType.CAST_ADD,
-  MessageType.CAST_REMOVE,
-  MessageType.REACTION_ADD,
-  MessageType.REACTION_REMOVE,
-  MessageType.LINK_ADD,
-  MessageType.LINK_REMOVE,
-];
-const TTL = 30 * 24 * 60 * 60; // key expires after 30 days without use; each use extends it
 
 const [command, ...rest] = process.argv.slice(2);
-const flags = {};
-const args = [];
-for (let i = 0; i < rest.length; i++) {
-  if (rest[i].startsWith('--')) flags[rest[i].slice(2)] = rest[i + 1]?.startsWith('--') ? true : rest[++i] ?? true;
-  else args.push(rest[i]);
-}
+const { flags, args } = parseArgs(rest);
 
 // ---------------------------------------------------------------------------
 
@@ -126,11 +102,6 @@ async function resolveFid(client, who) {
   return proof.fid;
 }
 
-function parseCastId(s) {
-  const m = /^(\d+)\/(0x[0-9a-fA-F]{40})$/.exec(s || '');
-  if (!m) throw new Error('Expected a cast id like 3/0xabc... (shown under each cast in `fc feed`)');
-  return { fid: Number(m[1]), hash: hexStringToBytes(m[2])._unsafeUnwrap() };
-}
 
 const usernames = new Map();
 async function username(client, fid) {
@@ -153,35 +124,8 @@ async function loadKeys(client, fid) {
   }
   appByKey.set(`loaded:${fid}`, true);
 }
-// Gasless keys (KEY_ADD) carry requestFid directly. Keys added onchain carry it
-// inside the ABI-encoded SignedKeyRequest metadata of the KeyRegistry event.
-function requestFidOf(signer) {
-  if (signer.requestFid) return signer.requestFid;
-  const metadata = signer.onchainEvent?.signerEventBody?.metadata;
-  if (!metadata?.length) return 0;
-  try {
-    const [{ requestFid }] = decodeAbiParameters(
-      [{ type: 'tuple', components: [
-        { name: 'requestFid', type: 'uint256' }, { name: 'requestSigner', type: 'address' },
-        { name: 'signature', type: 'bytes' }, { name: 'deadline', type: 'uint256' },
-      ] }],
-      bytesToHex(metadata)
-    );
-    return Number(requestFid);
-  } catch {
-    return 0;
-  }
-}
 const appOf = (msg) => appByKey.get(bytesToHexString(msg.signer)._unsafeUnwrap()) ?? 0;
 
-function ago(farcasterTs) {
-  const s = (Date.now() - fromFarcasterTime(farcasterTs)._unsafeUnwrap()) / 1000;
-  if (s < 0) return 'future-dated'; // timestamps are set by the author's client
-  if (s < 60) return `${Math.floor(s)}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
-}
 
 // ---------------------------------------------------------------------------
 
@@ -212,23 +156,9 @@ signature is. Only paste a seed phrase into software you have read or trust.
   const signer = new NobleEd25519Signer(privateKey);
   const key = (await signer.getSignerKey())._unsafeUnwrap();
 
-  // Gasless app key: the custody address signs an EIP-712 KeyAdd (and the
-  // SignedKeyRequest, since this client acts as its own app), the new key signs
-  // the envelope to prove possession, and the node relays it. No Optimism tx.
   const { currentUserNonce } = await call(client.getSignersByFid({ fid, requesterFids: [] }), 'read key nonce');
-  const body = await makeKeyAddBody(
-    {
-      fid: BigInt(fid),
-      key,
-      scopes: SCOPES,
-      ttl: TTL,
-      nonce: currentUserNonce + 1,
-      deadline: getFarcasterTime()._unsafeUnwrap() + 60 * 60,
-    },
-    new ViemLocalEip712Signer(account)
-  );
-  if (body.isErr()) throw new Error(`build key request: ${body.error.message}`);
-  await submit(client, await makeKeyAdd(body.value, { fid, network: NETWORK }, signer), 'submit KEY_ADD');
+  const made = await buildKeyAdd({ account, fid, signer, nonce: currentUserNonce + 1 });
+  await submit(client, made, 'submit KEY_ADD');
 
   const keyHex = bytesToHexString(key)._unsafeUnwrap();
   writeFileSync(CONFIG, JSON.stringify({ node, fid, publicKey: keyHex, privateKey: bytesToHexString(privateKey)._unsafeUnwrap() }, null, 2), {
