@@ -59,7 +59,14 @@
   .hero p { font-size: clamp(19px, 2.4vw, 24px); line-height: 1.4; color: var(--muted); max-width: 640px; margin: 18px auto 0; letter-spacing: -0.015em; }
   .hero .links { margin-top: 26px; display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; font-size: 19px; }
   .hero .links a::after { content: " ›"; }
-  .proof { text-align: center; color: var(--muted); font-size: 15px; margin: 22px auto 0; padding: 0 16px; max-width: 640px; }
+  .proofgrid { display: grid; grid-template-columns: 300px 1fr; gap: 48px; align-items: center; }
+  .proofgrid > * { min-width: 0; }
+  .proofgrid video { width: 100%; border-radius: 22px; background: #000; display: block; }
+  .checks { list-style: none; padding: 0; margin: 18px 0 0; }
+  .checks li { padding: 10px 0; border-bottom: 1px solid #e5e5ea; }
+  .checks li::before { content: "✓"; color: #1d8f3a; font-weight: 700; margin-right: 10px; }
+  @media (max-width: 760px) { .proofgrid { grid-template-columns: 1fr; gap: 28px; } .proofgrid video { max-width: 320px; margin: 0 auto; } }
+  .hero p.proof, .proof { text-align: center; color: var(--muted); font-size: 15px; margin: 22px auto 0; padding: 0 16px; max-width: 640px; }
 
   .commands { max-width: 780px; margin: 56px auto 0; padding: 0 22px; text-align: left; }
   .commands ol { list-style: none; margin: 0; padding: 0; background: var(--alt); border-radius: 22px; overflow: hidden; }
@@ -168,6 +175,26 @@
   </div>
   <p class="proof">2026 年 10 月在主网上完整跑通：从零同步一个节点，再通过它发出<a href="https://farcaster.xyz/sats100m/0xfdc3e931">第一条 cast</a>。</p>
 </header>
+
+<section id="proof" class="alt">
+  <div class="wrap">
+    <div class="proofgrid">
+      <video src="../farcaster-in-3.mp4" poster="../video-poster.jpg" controls playsinline preload="none"></video>
+      <div>
+        <div class="eyebrow">实测</div>
+        <h2>在主网上真跑过，不只是写出来。</h2>
+        <p class="lead">在租来的服务器上从零同步一个节点，然后客户端的每条命令都通过它发到了真实网络。</p>
+        <ul class="checks">
+          <li>添加了免 gas 的 app key，然后发出<a href="https://farcaster.xyz/sats100m/0xfdc3e931">第一条 cast</a></li>
+          <li>发帖、回复、点赞、转发，逐一撤销，删除</li>
+          <li>关注和取消关注，按 app 过滤信息流</li>
+          <li>每一步结果都用节点自己的 API 核对过</li>
+        </ul>
+        <p class="muted" style="margin-top:18px"><a href="https://github.com/Sats100M/farcaster-in-3/blob/main/docs/evidence/mainnet-2026-10-19.txt">完整记录</a> &nbsp;·&nbsp; 59 秒视频，音乐：Kevin MacLeod（CC BY 4.0）</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section id="start">
   <div class="wrap narrow">

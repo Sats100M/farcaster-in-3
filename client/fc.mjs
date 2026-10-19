@@ -5,8 +5,10 @@
 //   fc feed                    casts from people you follow
 //   fc cast "hello"            post (also: --reply <fid>/<hash>)
 //   fc follow <user>           also: unfollow
-//   fc like <fid>/<hash>       also: unlike, recast
+//   fc like <fid>/<hash>       also: unlike, recast, unrecast
+//   fc delete <fid>/<hash>     delete one of your casts
 //   fc apps <user>             which apps a user posts from (for --only-app / --hide-app)
+//   fc revoke                  remove this client's app key (no seed phrase needed)
 //
 // Reads go to your node over gRPC (port 3383). Writes go to the same node, which
 // checks them and gossips them on to the validators; read nodes keep no mempool.
@@ -27,6 +29,10 @@ import {
   makeLinkRemove,
   makeReactionAdd,
   makeReactionRemove,
+  makeCastRemove,
+  makeKeyRemove,
+  makeKeyRemoveBodySelfRevoke,
+  getFarcasterTime,
   bytesToHexString,
   hexStringToBytes,
 } from '@farcaster/hub-nodejs';
@@ -252,6 +258,32 @@ async function react(make, type, verb) {
 function like() { return react(makeReactionAdd, ReactionType.LIKE, 'Liked'); }
 function unlike() { return react(makeReactionRemove, ReactionType.LIKE, 'Unliked'); }
 function recast() { return react(makeReactionAdd, ReactionType.RECAST, 'Recast'); }
+function unrecast() { return react(makeReactionRemove, ReactionType.RECAST, 'Unrecast'); }
+
+async function del() {
+  const { client, signer, dataOptions } = loadConfig();
+  const target = parseCastId(args[0]);
+  if (target.fid !== dataOptions.fid) throw new Error('You can only delete your own casts.');
+  await submit(client, await makeCastRemove({ targetHash: target.hash }, dataOptions, signer), 'delete cast');
+  console.log(`✓ Deleted ${args[0]}`);
+}
+
+// The app key signs its own removal (self-revoke), so this needs no seed phrase.
+// It uses the per-app nonce, which this client owns because it is its own app.
+async function revoke() {
+  const { client, signer, dataOptions, publicKey } = loadConfig();
+  const { fid } = dataOptions;
+  const res = await call(client.getSignersByFid({ fid, requesterFids: [fid] }), 'read app nonce');
+  const appNonce = Number(res.requesterFidNonces?.[fid] ?? 0);
+  const body = makeKeyRemoveBodySelfRevoke({
+    key: hexStringToBytes(publicKey)._unsafeUnwrap(),
+    nonce: appNonce + 1,
+    deadline: getFarcasterTime()._unsafeUnwrap() + 60 * 60,
+  });
+  if (body.isErr()) throw new Error(`build key removal: ${body.error.message}`);
+  await submit(client, await makeKeyRemove(body.value, dataOptions, signer), 'submit KEY_REMOVE');
+  console.log(`✓ App key ${publicKey.slice(0, 18)}… revoked. Delete ${CONFIG} too; run init again to get a new key.`);
+}
 
 async function apps() {
   const { client } = loadConfig();
@@ -268,9 +300,9 @@ async function apps() {
   console.log('\nFilter your feed with: fc feed --only-app <app>   or   fc feed --hide-app <app>');
 }
 
-const commands = { init, whoami, feed, cast, follow, unfollow, like, unlike, recast, apps };
+const commands = { init, whoami, feed, cast, delete: del, follow, unfollow, like, unlike, recast, unrecast, apps, revoke };
 if (!commands[command]) {
-  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 13).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
   process.exit(command ? 1 : 0);
 }
 try {

@@ -18,7 +18,7 @@ cd client && npm install && node fc.mjs init --node <server-ip>     # 2. your ow
 - `scripts/destroy.mjs` deletes all of it so billing stops.
 - `scripts/node.sh` runs on the server. Wraps the official `snapchain.sh` installer so it works non-interactively over SSH, keeps the database on the data disk, and adds `fc-node-status`.
 - `scripts/reload-shard.sh` fixes a node that skipped a shard's snapshot (see below). `fc-node-status` tells you when you need it.
-- `client/fc.mjs` is the client. Imports a seed phrase once, registers its own gasless app key (`KEY_ADD`, no Optimism transaction), then: `feed`, `cast`, `follow`, `like`, `recast`, and `--only-app` / `--hide-app` to include or exclude casts from any client.
+- `client/fc.mjs` is the client. Imports a seed phrase once, registers its own gasless app key (`KEY_ADD`, no Optimism transaction), then: `feed`, `cast` (and `--reply`), `delete`, `follow`/`unfollow`, `like`/`unlike`, `recast`/`unrecast`, `--only-app` / `--hide-app` to include or exclude casts from any client, and `revoke`, which removes the app key without the seed phrase.
 
 The client only talks to your node: reads over gRPC, and writes go to the same node, which relays them to the validators.
 
@@ -29,7 +29,7 @@ The client only talks to your node: reads over gRPC, and writes go to the same n
 | Step 0 on Azure | yes, from a fresh trial subscription |
 | Step 0 on Hetzner, AWS EC2, Lightsail | price check and API calls only; my accounts were blocked from creating servers (see below) |
 | Step 1 | yes, Ubuntu 24.04 on Azure, synced to mainnet |
-| Step 2 | yes, Windows 11, Node 22: `init` added a gasless app key, then [this cast](https://farcaster.xyz/sats100m/0xfdc3e931) went out through the node |
+| Step 2 | yes, Windows 11, Node 22. Every command run on mainnet (init, cast, reply, like, recast, undo each, delete, follow, unfollow, app filters), each result checked against the node's API: [transcript](docs/evidence/mainnet-2026-10-19.txt) |
 
 If you run it on a provider or OS not listed, an issue saying it worked (or didn't) helps.
 

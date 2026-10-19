@@ -59,7 +59,14 @@
   .hero p { font-size: clamp(19px, 2.4vw, 24px); line-height: 1.4; color: var(--muted); max-width: 640px; margin: 18px auto 0; letter-spacing: -0.015em; }
   .hero .links { margin-top: 26px; display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; font-size: 19px; }
   .hero .links a::after { content: " ›"; }
-  .proof { text-align: center; color: var(--muted); font-size: 15px; margin: 22px auto 0; padding: 0 16px; max-width: 640px; }
+  .proofgrid { display: grid; grid-template-columns: 300px 1fr; gap: 48px; align-items: center; }
+  .proofgrid > * { min-width: 0; }
+  .proofgrid video { width: 100%; border-radius: 22px; background: #000; display: block; }
+  .checks { list-style: none; padding: 0; margin: 18px 0 0; }
+  .checks li { padding: 10px 0; border-bottom: 1px solid #e5e5ea; }
+  .checks li::before { content: "✓"; color: #1d8f3a; font-weight: 700; margin-right: 10px; }
+  @media (max-width: 760px) { .proofgrid { grid-template-columns: 1fr; gap: 28px; } .proofgrid video { max-width: 320px; margin: 0 auto; } }
+  .hero p.proof, .proof { text-align: center; color: var(--muted); font-size: 15px; margin: 22px auto 0; padding: 0 16px; max-width: 640px; }
 
   .commands { max-width: 780px; margin: 56px auto 0; padding: 0 22px; text-align: left; }
   .commands ol { list-style: none; margin: 0; padding: 0; background: var(--alt); border-radius: 22px; overflow: hidden; }
@@ -168,6 +175,26 @@
   </div>
   <p class="proof">Tested end to end on mainnet, October 2026: a node synced from scratch, then <a href="https://farcaster.xyz/sats100m/0xfdc3e931">the first cast sent through it</a>.</p>
 </header>
+
+<section id="proof" class="alt">
+  <div class="wrap">
+    <div class="proofgrid">
+      <video src="farcaster-in-3.mp4" poster="video-poster.jpg" controls playsinline preload="none"></video>
+      <div>
+        <div class="eyebrow">Proof</div>
+        <h2>Run on mainnet, not just written.</h2>
+        <p class="lead">A node synced from scratch on a rented server, then every client command went through it to the real network.</p>
+        <ul class="checks">
+          <li>Gasless app key added, then <a href="https://farcaster.xyz/sats100m/0xfdc3e931">the first cast</a></li>
+          <li>Cast, reply, like, recast, undo each, delete</li>
+          <li>Follow and unfollow, app filters on the feed</li>
+          <li>Each result checked against the node's own API</li>
+        </ul>
+        <p class="muted" style="margin-top:18px"><a href="https://github.com/Sats100M/farcaster-in-3/blob/main/docs/evidence/mainnet-2026-10-19.txt">Full transcript</a> &nbsp;·&nbsp; 59-second video, music by Kevin MacLeod (CC BY 4.0)</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section id="start">
   <div class="wrap narrow">

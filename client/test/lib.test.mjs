@@ -98,3 +98,17 @@ test('buildKeyAdd produces a KEY_ADD the protocol accepts', async () => {
   const valid = await validations.validateMessage(msg);
   assert.ok(valid.isOk(), valid.isErr() ? valid.error.message : '');
 });
+
+test('a self-revoke KEY_REMOVE signed by the app key passes validation', async () => {
+  const { makeKeyRemove, makeKeyRemoveBodySelfRevoke, getFarcasterTime, FarcasterNetwork } = await import('@farcaster/hub-nodejs');
+  const signer = new NobleEd25519Signer(new Uint8Array(32).fill(9));
+  const key = (await signer.getSignerKey())._unsafeUnwrap();
+  const body = makeKeyRemoveBodySelfRevoke({ key, nonce: 1, deadline: getFarcasterTime()._unsafeUnwrap() + 3600 });
+  assert.ok(body.isOk(), body.isErr() ? body.error.message : '');
+  const msg = await makeKeyRemove(body.value, { fid: 1234, network: FarcasterNetwork.MAINNET }, signer);
+  assert.ok(msg.isOk(), msg.isErr() ? msg.error.message : '');
+  assert.equal(msg.value.data.type, MessageType.KEY_REMOVE);
+  assert.deepEqual(msg.value.signer, key);
+  const valid = await validations.validateMessage(msg.value);
+  assert.ok(valid.isOk(), valid.isErr() ? valid.error.message : '');
+});

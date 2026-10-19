@@ -1,0 +1,88 @@
+farcaster-in-3: every client command, run against mainnet through my own read node
+Node: Snapchain 0.14.3 read node on Azure (172.174.89.126). Client: client/fc.mjs. Account: @sats100m (FID 3355244).
+Started 2026-10-19 14:53:15 UTC
+
+$ ssh azureuser@172.174.89.126 fc-node-status
+version 0.14.3
+shard 0  height 48407766  behind 0s
+shard 1  height 49083217  behind 0s
+shard 2  height 48918590  behind 0s
+✓ in sync
+
+$ node fc.mjs whoami
+@sats100m (FID 3355244) via node 172.174.89.126
+app key 0x931335d7d936891e… active, expires 2026-11-17
+
+$ node fc.mjs cast Testing every command of farcaster-in-3 through my own node. This cast gets liked, recast and then deleted.
+✓ Cast sent: 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs like 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Liked 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs recast 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Recast 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs unlike 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Unliked 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs unrecast 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Unrecast 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs cast Reply from my own node. --reply 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Cast sent: 3355244/0xf72bc767f21f60711fb3b72aef42e51e6cf90243
+
+$ node fc.mjs delete 3355244/0xf72bc767f21f60711fb3b72aef42e51e6cf90243
+✓ Deleted 3355244/0xf72bc767f21f60711fb3b72aef42e51e6cf90243
+
+$ node fc.mjs delete 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+✓ Deleted 3355244/0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+
+$ node fc.mjs follow dwr
+✓ Following @dwr
+
+$ node fc.mjs unfollow dwr
+✓ Unfollowed @dwr
+
+$ node fc.mjs apps balajis.eth
+Last 100 casts by @balajis.eth, by app:
+    84  @warpcast (FID 9152)
+    16  @baseapp.base.eth (FID 309857)
+
+Filter your feed with: fc feed --only-app <app>   or   fc feed --hide-app <app>
+
+$ node fc.mjs feed --fid balajis.eth --only-app 9152 --limit 1
+@darrylyeo · 3m  ↳ reply to 3854
+  https://farcaster.xyz/darrylyeo/0xce756d13
+  id 3854/0x5eb7d7e25f91c9e3484845b7e6a897e3d69c9b57
+
+
+$ node fc.mjs feed --fid balajis.eth --hide-app 9152 --limit 1
+@greg · future-dated
+  oh so we're time traveling now?
+  id 347/0x8ae98f90bfb0daa36f4364f3e2c2fee0dc8c2225
+
+
+Finished 2026-10-19 14:54:38 UTC
+
+--- Independent check: the node's own HTTP API, queried after the run ---
+
+$ curl http://172.174.89.126:3381/v1/castById?fid=3355244&hash=0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8
+{"error":"Failed to get cast","error_detail":"status: NotFound, message: \"cast not found\", details: [], metadata: MetadataMap { headers: {} }"}
+
+$ curl http://172.174.89.126:3381/v1/castById?fid=3355244&hash=0xf72bc767f21f60711fb3b72aef42e51e6cf90243
+{"error":"Failed to get cast","error_detail":"status: NotFound, message: \"cast not found\", details: [], metadata: MetadataMap { headers: {} }"}
+
+$ curl http://172.174.89.126:3381/v1/reactionsByCast?target_fid=3355244&target_hash=0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8&reaction_type=Like
+{"messages":[],"nextPageToken":""}
+
+$ curl http://172.174.89.126:3381/v1/reactionsByCast?target_fid=3355244&target_hash=0xf1e02d2dbb43a2ff81e0168e56f1eb28458369c8&reaction_type=Recast
+{"messages":[],"nextPageToken":""}
+
+$ curl http://172.174.89.126:3381/v1/linkById?fid=3355244&target_fid=3&link_type=follow
+{"error":"Failed to get link","error_detail":"status: NotFound, message: \"cast not found\", details: [], metadata: MetadataMap { headers: {} }"}
+
+$ curl http://172.174.89.126:3381/v1/castById?fid=3355244&hash=0xfdc3e931cdaa0d2b3a0af83a49ed0f93ec6a0979   (the first cast, still there)
+{"type": "MESSAGE_TYPE_CAST_ADD", "text": "Sent from my own Farcaster node. No API keys. https://sats100m.github.io/farcaster-in-3/"}
+
+Deleted casts and the removed follow return NotFound. The follow check says "cast not found" for a link:
+that is the shared not-found message fixed upstream in https://github.com/farcasterxyz/snapchain/pull/1052
