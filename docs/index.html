@@ -322,6 +322,14 @@ curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># from anywhere</
     <details><summary>One shard is months behind and barely moving.</summary><p>Snapshots are replaced every day, and the node reads the download list for every shard before it starts. If the first sync takes long enough, a shard's snapshot is gone by the time its turn comes, so the node skips it and replays that shard from the beginning, which takes weeks. <code>fc-node-status</code> warns about this and prints the fix: <code>reload-shard.sh --shard N</code>, which fetches today's snapshot for just that shard and swaps it in. It took about an hour for shard 0.</p></details>
     <details><summary>"Nonce is not greater than stored nonce."</summary><p>Another key was added for your account at the same moment. Run <code>init</code> again.</p></details>
     <details><summary>My cast isn't showing in other apps.</summary><p>Give it a few seconds. If it never appears, the relay was dropped under load. Post it again.</p></details>
+
+    <h3>Go further</h3>
+    <ul>
+      <li><a href="https://docs.farcaster.xyz/learn/architecture/overview">Farcaster architecture</a>: what lives onchain and what lives on Snapchain.</li>
+      <li><a href="https://snapchain.farcaster.xyz/guides/running-a-node">Running a node</a>: the official guide that step 1 automates.</li>
+      <li><a href="https://docs.farcaster.xyz/developers/guides/basics/hello-world">Hello World</a>: create an account and post from code, with the same gasless key flow this client uses.</li>
+      <li><a href="https://snapchain.farcaster.xyz/guides/writing-messages">Writing messages</a>: how messages are signed and submitted.</li>
+    </ul>
   </div>
 </section>
 

@@ -322,6 +322,14 @@ curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># 在任何地方
     <details><summary>有一个分片落后好几个月，几乎不动。</summary><p>快照每天都会替换，而节点在开始同步之前，就会先读取所有 shard（分片）的下载列表。如果首次同步耗时太久，等轮到某个分片时，它对应的快照已经没了，节点就会跳过它，从头开始重放这个分片，这要花好几周。<code>fc-node-status</code> 会对这种情况发出警告，并打印修复方法：<code>reload-shard.sh --shard N</code>，它只为这一个分片下载当天的快照并替换进去。分片 0 大约花了一个小时。</p></details>
     <details><summary>报错 "Nonce is not greater than stored nonce."</summary><p>同一时刻有另一个密钥被添加到了你的账号上。重新运行一次 <code>init</code> 就行。</p></details>
     <details><summary>我的 cast 在其他 app 里看不到。</summary><p>等几秒钟。如果一直没出现，说明转发在高负载下被丢弃了。再发一次就好。</p></details>
+
+    <h3>延伸阅读</h3>
+    <ul>
+      <li><a href="https://docs.farcaster.xyz/learn/architecture/overview">Farcaster 架构</a>：哪些在链上，哪些在 Snapchain 上。</li>
+      <li><a href="https://snapchain.farcaster.xyz/guides/running-a-node">Running a node</a>：第 1 步自动化的就是这份官方指南。</li>
+      <li><a href="https://docs.farcaster.xyz/developers/guides/basics/hello-world">Hello World</a>：用代码注册账号并发帖，用的也是本客户端这套免 gas 的密钥流程。</li>
+      <li><a href="https://snapchain.farcaster.xyz/guides/writing-messages">Writing messages</a>：消息如何签名和提交。</li>
+    </ul>
   </div>
 </section>
 

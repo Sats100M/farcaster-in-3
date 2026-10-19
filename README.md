@@ -49,6 +49,8 @@ Sent upstream while building this:
 - Snapchain: [#1051](https://github.com/farcasterxyz/snapchain/pull/1051) return `request_fid` for on-chain signers, [#1052](https://github.com/farcasterxyz/snapchain/pull/1052) "message not found" instead of "cast not found"
 - Snapchain docs: [#1040](https://github.com/farcasterxyz/snapchain/pull/1040) node requirements, [#1041](https://github.com/farcasterxyz/snapchain/pull/1041) bootstrap needs a TTY, [#1042](https://github.com/farcasterxyz/snapchain/pull/1042) profile URL
 - hub-nodejs: [#2744](https://github.com/farcasterxyz/hub-monorepo/pull/2744) every `Client.md` example fixed and run against a Snapchain node
+- Farcaster docs: [#470](https://github.com/farcasterxyz/docs/pull/470) Hello World adds its key without gas, the feed guide runs as written, no more pointers to the hoyt hub
+- Snapchain docs: [#1053](https://github.com/farcasterxyz/snapchain/pull/1053) the AWS node guide costs about $300/month, not $100
 
 Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first, and prefer delegated signing (approving a key from an app that already holds your account) wherever an app offers it. Details in [SECURITY.md](SECURITY.md).
 
