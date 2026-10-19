@@ -45,7 +45,9 @@ If you run it on a provider or OS not listed, an issue saying it worked (or didn
 
 Fixes sent upstream while building this: [snapchain#1040](https://github.com/farcasterxyz/snapchain/pull/1040) (README node requirements), [#1041](https://github.com/farcasterxyz/snapchain/pull/1041) (bootstrap needs a TTY), [#1042](https://github.com/farcasterxyz/snapchain/pull/1042) (profile URL), [#1045](https://github.com/farcasterxyz/snapchain/pull/1045) (snapshot rotation, issue [#1044](https://github.com/farcasterxyz/snapchain/issues/1044)).
 
-Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first. Details in [SECURITY.md](SECURITY.md).
+Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first, and prefer delegated signing (approving a key from an app that already holds your account) wherever an app offers it. Details in [SECURITY.md](SECURITY.md).
+
+Tutorial in Chinese: https://sats100m.github.io/farcaster-in-3/zh/
 
 Want to add a provider or fix something? See [CONTRIBUTING.md](CONTRIBUTING.md).
 

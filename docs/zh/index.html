@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>farcaster-in-3：三条命令，拥有你自己的 Farcaster 节点和客户端</title>
+<meta name="description" content="运行一个 Farcaster Snapchain 只读节点，再配一个通过它发帖的客户端。三条命令，不需要 API key。">
+<meta property="og:title" content="farcaster-in-3">
+<meta property="og:description" content="你自己的 Farcaster 只读节点和客户端，三条命令搞定。不需要 API key。">
+<link rel="alternate" hreflang="en" href="https://sats100m.github.io/farcaster-in-3/">
+<link rel="alternate" hreflang="zh-CN" href="https://sats100m.github.io/farcaster-in-3/zh/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --alt: #f5f5f7;
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --line: #d2d2d7;
+    --link: #0066cc;
+    --code: #f5f5f7;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 56px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 17px/1.53 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    letter-spacing: -0.01em; -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; margin: 0; }
+  code, pre { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  p code, li code, td code {
+    font-size: 0.86em; background: var(--code); padding: 2px 6px; border-radius: 6px;
+  }
+  @media (max-width: 600px) { p code, li code, td code { overflow-wrap: anywhere; } }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+  .narrow { max-width: 692px; }
+
+  /* nav */
+  nav {
+    position: sticky; top: 0; z-index: 10; height: 48px;
+    background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  nav .wrap { display: flex; align-items: center; height: 100%; gap: 28px; font-size: 13px; }
+  nav .brand { font-weight: 600; font-size: 15px; color: var(--fg); margin-right: auto; }
+  nav a { color: var(--fg); opacity: 0.8; }
+  nav a:hover { opacity: 1; text-decoration: none; }
+  @media (max-width: 600px) { nav .opt { display: none; } nav .wrap { gap: 18px; } }
+
+  /* hero */
+  .hero { text-align: center; padding: 96px 0 40px; }
+  .hero h1 { font-size: clamp(44px, 8vw, 80px); line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; }
+  .hero p { font-size: clamp(19px, 2.4vw, 24px); line-height: 1.4; color: var(--muted); max-width: 640px; margin: 18px auto 0; letter-spacing: -0.015em; }
+  .hero .links { margin-top: 26px; display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; font-size: 19px; }
+  .hero .links a::after { content: " ›"; }
+
+  .commands { max-width: 780px; margin: 56px auto 0; padding: 0 22px; text-align: left; }
+  .commands ol { list-style: none; margin: 0; padding: 0; background: var(--alt); border-radius: 22px; overflow: hidden; }
+  .commands li { display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: baseline; padding: 22px 28px; border-bottom: 1px solid #e5e5ea; }
+  .commands li:last-child { border-bottom: 0; }
+  .commands .n { font-weight: 600; color: var(--muted); font-size: 15px; }
+  .commands .t { font-weight: 600; font-size: 17px; }
+  .commands code { display: block; font-size: 14px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+  @media (max-width: 600px) { .commands li { padding: 18px 20px; grid-template-columns: 26px 1fr; } }
+
+  /* sections */
+  section { padding: 96px 0; }
+  section.alt { background: var(--alt); }
+  .eyebrow { font-size: 17px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+  section h2 { font-size: clamp(34px, 5vw, 48px); line-height: 1.08; font-weight: 700; letter-spacing: -0.03em; }
+  section .lead { font-size: 21px; line-height: 1.45; color: var(--muted); margin: 16px 0 0; }
+  section h3 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 56px 0 10px; }
+  section p { margin: 14px 0 0; }
+  .muted { color: var(--muted); }
+  @media (max-width: 600px) { section { padding: 64px 0; } .hero { padding: 64px 0 24px; } }
+
+  /* steps */
+  .step { margin-top: 56px; }
+  .step .label { font-size: 15px; font-weight: 600; color: var(--muted); }
+  .step h3 { margin: 4px 0 0; font-size: 28px; }
+  .code { position: relative; margin: 18px 0 0; background: var(--code); border-radius: 14px; }
+  section.alt .code { background: #fff; }
+  .code pre { margin: 0; padding: 18px 20px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; color: var(--fg); }
+  .code pre .c { color: #8e8e93; }
+  .copy {
+    position: absolute; top: 10px; right: 10px; border: 0; border-radius: 980px; padding: 4px 12px;
+    font: 500 12px -apple-system, BlinkMacSystemFont, Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: rgba(0,0,0,0.06); color: var(--fg); cursor: pointer;
+  }
+  .copy:hover { background: rgba(0,0,0,0.1); }
+  /* On phones code lines run under the button, so give it its own row. */
+  @media (max-width: 600px) { .code pre { padding-top: 46px; } }
+
+  .note { margin-top: 48px; padding: 24px 28px; border-radius: 18px; background: #fff8e6; }
+  .note p:first-child { margin-top: 0; }
+
+  /* tiles */
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+  .tile { background: #fff; border-radius: 22px; padding: 30px 28px; }
+  .tile .k { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tile h3 { margin: 6px 0 8px; font-size: 24px; }
+  .tile p { margin: 0; color: var(--muted); font-size: 16px; }
+  @media (max-width: 760px) { .tiles { grid-template-columns: 1fr; } }
+
+  /* flow */
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 40px; counter-reset: f; }
+  .flow div { background: var(--alt); border-radius: 18px; padding: 22px 20px; }
+  .flow b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .flow b::before { counter-increment: f; content: counter(f) ". "; color: var(--muted); }
+  .flow span { color: var(--muted); font-size: 15px; }
+  @media (max-width: 760px) { .flow { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 420px) { .flow { grid-template-columns: 1fr; } }
+
+  ol.plain { padding-left: 1.2em; margin: 14px 0 0; } ol.plain li { margin: 8px 0; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 16px; }
+  th, td { text-align: left; padding: 16px 16px 16px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 14px; font-weight: 600; color: var(--muted); }
+  td.r, th.r { text-align: right; padding-right: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+  details:first-of-type { border-top: 1px solid var(--line); margin-top: 28px; }
+  details summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 22px; line-height: 1; }
+  details[open] summary::after { content: "−"; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+
+  footer { background: var(--alt); color: var(--muted); font-size: 12px; padding: 28px 0 40px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 18px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#">farcaster-in-3</a>
+    <a href="#start">开始使用</a>
+    <a href="#how" class="opt">工作原理</a>
+    <a href="#cost" class="opt">费用</a>
+    <a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a>
+    <a href="../" lang="en" hreflang="en">English</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>你自己的 Farcaster。<br>三条命令。</h1>
+    <p>在你租的服务器上跑一个 Snapchain read node（只读节点），再用一个只跟它通信的客户端发帖。不需要 API key，也不需要任何人批准。</p>
+    <div class="links">
+      <a href="#start">开始使用</a>
+      <a href="https://github.com/Sats100M/farcaster-in-3">查看源码</a>
+    </div>
+  </div>
+  <div class="commands">
+    <ol>
+      <li><span class="n">0</span><div><span class="t">租一台服务器</span><code>node scripts/provision.mjs</code></div></li>
+      <li><span class="n">1</span><div><span class="t">启动只读节点</span><code>ssh … "curl …/node.sh | sudo bash"</code></div></li>
+      <li><span class="n">2</span><div><span class="t">用你自己的客户端发帖</span><code>node fc.mjs init --node &lt;your-server&gt;</code></div></li>
+    </ol>
+  </div>
+</header>
+
+<section id="start">
+  <div class="wrap narrow">
+    <div class="eyebrow">开始使用</div>
+    <h2>大约十分钟就能跑起来。</h2>
+    <p class="lead">另外还要等节点自己同步几个小时。你需要 Node.js 20 或更高版本，一个 Azure、AWS 或 Hetzner 账号，以及一个已购买存储空间、并且手上有 recovery phrase（助记词）的 Farcaster 账号。</p>
+
+    <div class="step">
+      <div class="label">第 0 步</div>
+      <h3>租一台服务器。</h3>
+      <div class="code"><pre>git clone https://github.com/Sats100M/farcaster-in-3
+cd farcaster-in-3
+az login                                   <span class="c"># 或者 aws login，或者在 .env 里设置 HCLOUD_TOKEN</span>
+node scripts/provision.mjs --provider azure</pre></div>
+      <p class="muted">它会先显示价格，经你确认后才创建任何资源：一台 4 vCPU、16 GB 内存、2 TB 硬盘的服务器，并开放 Snapchain 用到的端口。完成后会把第 1 步的命令打印给你。</p>
+    </div>
+
+    <div class="step">
+      <div class="label">第 1 步</div>
+      <h3>启动一个 Snapchain 只读节点。</h3>
+      <div class="code"><pre>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server-ip&gt; \
+  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh \
+   | sudo bash -s -- --fid &lt;your-fid&gt;"</pre></div>
+      <p class="muted">安装 Docker 和官方的 Snapchain 节点，然后开始同步。首次同步要下载一个 470 GB 的 snapshot（快照），需要好几个小时。在服务器上运行 <code>fc-node-status</code> 可以查看进度。</p>
+    </div>
+
+    <div class="step">
+      <div class="label">第 2 步</div>
+      <h3>用你自己的客户端发帖。</h3>
+      <div class="code"><pre>cd client && npm install
+node fc.mjs init --node &lt;server-ip&gt;</pre></div>
+      <p class="muted">它只会问一次你的助记词，用它给这个客户端生成一个专属的 app key（应用密钥），然后立刻把助记词丢掉。之后就可以这样用：</p>
+      <div class="code"><pre>node fc.mjs feed
+node fc.mjs cast "posting from my own node"
+node fc.mjs follow dwr
+node fc.mjs like 3/0x…
+node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
+    </div>
+
+    <div class="note">
+      <p><strong>对待助记词，要像对待 <code>rm -rf</code> 一样小心。</strong>谁拿到它，谁就能控制你的账号。只把它粘贴到你读过代码或者信得过的软件里。这个客户端只在内存里用它签一条消息，既不保存，也不会把它发送到任何地方。你可以自己检查：<a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">代码就一个文件</a>。</p>
+      <p>第一次尝试？请用测试账号。如果某个应用支持委托签名（delegated signing），也就是在已经登录你账号的应用里批准它的密钥，优先用这种方式：助记词不用离开你的手机。这个客户端之所以要助记词，只是因为一台全新的服务器上没有可以发起批准的应用。</p>
+    </div>
+
+    <p class="muted" style="margin-top:32px">用完了？<code>node scripts/destroy.mjs</code> 会删除所有资源，计费随之停止。</p>
+  </div>
+</section>
+
+<section class="alt" id="how">
+  <div class="wrap">
+    <div class="narrow">
+      <div class="eyebrow">工作原理</div>
+      <h2>你的账号不归任何一个 app 所有。</h2>
+      <p class="lead">Farcaster 把一个社交网络拆成三层，分别由不同的人来运行。就算某个 app 封了你，或者干脆关门了，你的账号、关注者和 cast（帖子）都还在。</p>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="k">在 Optimism 上</div><h3>身份</h3><p>你的账号编号、拥有这个账号的钱包，以及你已付费的存储空间。</p></div>
+      <div class="tile"><div class="k">在 Snapchain 上</div><h3>数据</h3><p>每一条 cast、每个点赞和关注，都是一条小小的签名消息，由每个节点保存。</p></div>
+      <div class="tile"><div class="k">谁都能写</div><h3>应用</h3><p>你刷的信息流、你点的按钮。也包括这个仓库里的客户端。</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap narrow">
+    <div class="eyebrow">账号</div>
+    <h2>FID、托管地址和存储空间。</h2>
+
+    <h3>FID</h3>
+    <p>你的账号编号，由 Optimism 上的 ID Registry 合约分配。像 <code>@dwr</code> 这样的用户名是另一个独立的标签，指向这个编号。</p>
+
+    <h3>Custody address（托管地址）</h3>
+    <p>拥有你 FID 的以太坊钱包，由你的助记词按 <code>m/44'/60'/0'/0/0</code> 路径派生出来。它能转移账号、添加或移除 app key，所以你只用它来授权，从不用它发帖。客户端会去问你自己的节点“这个托管地址拥有哪个账号”，以此找到你的 FID，所以不需要以太坊 RPC，也不需要 API key。</p>
+
+    <h3>存储租金</h3>
+    <p>每条消息都要占用每个节点的空间，所以账号需要付租金，在 Optimism 上按年为单位购买。一个单位大约能存 5,000 条 cast、2,500 个回应（reaction）和 2,500 个关注。超出之后，最早的会被清理掉。在 Farcaster app 里注册的账号通常自带存储空间；没有存储空间的账号，这个客户端没法替它发帖。</p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="narrow">
+      <div class="eyebrow">网络</div>
+      <h2>验证者负责写入，只读节点负责跟随。</h2>
+      <p class="lead">Snapchain 负责给每条消息排序并存储。一小组公开、固定的 validator（验证者）负责提议区块并投票。只读节点运行同一套软件，只是设置了 <code>read_node = true</code>，保存完整的状态，提供同样的 API。任何人都可以运行一个。</p>
+    </div>
+    <div class="flow">
+      <div><b>提交</b><span>你的客户端用 app key 给 cast 签名，然后发给你的节点。</span></div>
+      <div><b>转发</b><span>你的节点校验之后，通过 gossip 把它传播出去。节点本身不维护 mempool。</span></div>
+      <div><b>打包</b><span>某个验证者收到它，把它放进一个区块。</span></div>
+      <div><b>同步</b><span>区块到达你的节点，这条 cast 就出现在你的信息流里了。</span></div>
+    </div>
+    <div class="narrow">
+      <p class="muted" style="margin-top:28px">所以节点返回成功，意思是<em>已接受并转发</em>，而不是已经<em>打包进区块</em>。负载很高时，转发出去的消息可能会丢，需要重新发送。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap narrow">
+    <div class="eyebrow">App key</div>
+    <h2>你的客户端有自己的密钥。</h2>
+    <p class="lead">app 从不用你的托管密钥发帖。每个 app 都会拿到一个 app key：一个 Ed25519 密钥，只能以你的 FID 的名义签名消息，除此之外什么都做不了。</p>
+    <p>从 2026 年年中开始，添加 app key 是免费的。不需要发起 Optimism 交易：客户端直接把一条带三个签名的 <code>KEY_ADD</code> 消息发给 Snapchain。</p>
+    <ol class="plain">
+      <li>你的托管地址签名确认：添加哪个密钥、它能做什么、有效期多长，外加一个 nonce。</li>
+      <li>发起请求的 app 签署一份请求，写明它自己的 FID。这个客户端自己就是 app，所以这一步签名的还是你的托管地址。</li>
+      <li>新密钥给整个信封签名，证明它确实由添加它的人持有。</li>
+    </ol>
+    <p>这个客户端的密钥可以发帖、删除 cast、点赞和关注，但不能添加密钥，也碰不了账号本身。连续 30 天不用就会过期，每用一次都会重新计时。</p>
+
+    <h3>按客户端过滤</h3>
+    <p>每个 app key 都记录着申请它的那个 app 的 FID。所以你的节点知道每条 cast 来自哪个 app，而且不需要信任这个 app。</p>
+    <div class="code"><pre>node fc.mjs apps dwr                 <span class="c"># 看某人用哪些 app 发帖</span>
+node fc.mjs feed --only-app &lt;app&gt;    <span class="c"># 只看这个 app</span>
+node fc.mjs feed --hide-app &lt;app&gt;    <span class="c"># 除了它，其他都看</span></pre></div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap narrow">
+    <div class="eyebrow">底层细节</div>
+    <h2>服务器和节点。</h2>
+    <p class="lead">Snapchain 需要 4 核 CPU、16 GB 内存、一个公网 IP，并开放 3381 到 3383 端口。还有硬盘：光是快照压缩后就有 470 GB，而且解压期间要一直保留。直接上 2 TB。</p>
+
+    <h3>node.sh 额外做了什么</h3>
+    <p>它封装了 <a href="https://github.com/farcasterxyz/snapchain">farcasterxyz/snapchain</a> 的官方安装脚本：挂载数据盘并把数据库放在上面；提前回答安装脚本的交互提问，这样通过 SSH 也能直接跑；另外加了一个 <code>fc-node-status</code> 命令，用来显示同步进度。还有一个每周运行的任务，让节点保持最新版本。</p>
+    <div class="code"><pre>fc-node-status                          <span class="c"># 在服务器上运行</span>
+curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># 在任何地方都能运行</span></pre></div>
+
+    <h3>各云厂商的注意事项</h3>
+    <p><strong>Azure。</strong>新订阅需要先注册 Compute，脚本会帮你做。免费试用每个区域允许 4 个 vCPU，刚好够用。机型经常售罄，所以脚本会自动尝试其他机型。</p>
+    <p><strong>AWS。</strong>免费套餐的账号开不了这种规格的服务器。用新版 Projects 流程创建的账号，在开启高级功能之前，EC2 和 Lightsail 也是被禁用的。</p>
+    <p><strong>Hetzner。</strong>最便宜，前提是你的账号已经用了一段时间。新账号暂时还创建不了 2 TB 的卷。</p>
+  </div>
+</section>
+
+<section id="cost">
+  <div class="wrap narrow">
+    <div class="eyebrow">费用</div>
+    <h2>按小时计费。</h2>
+    <p class="lead">新账号通常会送一些额度，所以试用一天往往不花钱。</p>
+    <table>
+      <tr><th>云厂商</th><th class="r">每月</th><th class="r">每天</th></tr>
+      <tr><td>Hetzner，CX43 加 2 TB</td><td class="r">$176</td><td class="r">$5.80</td></tr>
+      <tr><td>AWS Lightsail，16 GB 加 2 TB</td><td class="r">$289</td><td class="r">$9.50</td></tr>
+      <tr><td>Azure，D4s v4 加 2 TB</td><td class="r">$294</td><td class="r">$9.70</td></tr>
+    </table>
+
+    <h3>常见问题排查</h3>
+    <details><summary>客户端连不上我的节点。</summary><p>API 要等快照恢复完成后才会启动。在服务器上运行 <code>fc-node-status</code> 看看，并确认 3383 端口已经开放。</p></details>
+    <details><summary>有一个分片落后好几个月，几乎不动。</summary><p>快照每天都会替换，而节点在开始同步之前，就会先读取所有 shard（分片）的下载列表。如果首次同步耗时太久，等轮到某个分片时，它对应的快照已经没了，节点就会跳过它，从头开始重放这个分片，这要花好几周。<code>fc-node-status</code> 会对这种情况发出警告，并打印修复方法：<code>reload-shard.sh --shard N</code>，它只为这一个分片下载当天的快照并替换进去。分片 0 大约花了一个小时。</p></details>
+    <details><summary>报错 "Nonce is not greater than stored nonce."</summary><p>同一时刻有另一个密钥被添加到了你的账号上。重新运行一次 <code>init</code> 就行。</p></details>
+    <details><summary>我的 cast 在其他 app 里看不到。</summary><p>等几秒钟。如果一直没出现，说明转发在高负载下被丢弃了。再发一次就好。</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>farcaster-in-3。MIT 许可证。</span>
+    <span><a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a> &nbsp;·&nbsp; <a href="https://github.com/Sats100M/farcaster-in-3/issues">反馈问题</a> &nbsp;·&nbsp; <a href="https://farcaster.xyz/sats100m">@sats100m</a></span>
+  </div>
+</footer>
+
+<script>
+  for (const pre of document.querySelectorAll('.code pre')) {
+    const b = document.createElement('button');
+    b.className = 'copy'; b.textContent = '复制';
+    b.onclick = async () => {
+      const text = [...pre.childNodes].map((n) => (n.classList?.contains('c') ? '' : n.textContent)).join('')
+        .split('\n').map((l) => l.replace(/\s+$/, '')).join('\n').trim();
+      try { await navigator.clipboard.writeText(text); b.textContent = '已复制'; }
+      catch { b.textContent = '请手动选择'; }
+      setTimeout(() => (b.textContent = '复制'), 1500);
+    };
+    pre.parentElement.appendChild(b);
+  }
+</script>
+</body>
+</html>

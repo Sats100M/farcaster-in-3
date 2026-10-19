@@ -7,6 +7,8 @@
 <meta name="description" content="Run a Farcaster Snapchain read node and a client that posts through it. Three commands, no API keys.">
 <meta property="og:title" content="farcaster-in-3">
 <meta property="og:description" content="Your own Farcaster read node and client, in three commands. No API keys.">
+<link rel="alternate" hreflang="en" href="https://sats100m.github.io/farcaster-in-3/">
+<link rel="alternate" hreflang="zh-CN" href="https://sats100m.github.io/farcaster-in-3/zh/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -143,6 +145,7 @@
     <a href="#how" class="opt">How it works</a>
     <a href="#cost" class="opt">Cost</a>
     <a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a>
+    <a href="zh/" lang="zh-CN" hreflang="zh-CN">中文</a>
   </div>
 </nav>
 
@@ -204,7 +207,7 @@ node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
 
     <div class="note">
       <p><strong>Treat your recovery phrase like <code>rm -rf</code>.</strong> It controls your account. Only paste it into software you've read or trust. This client uses it in memory to sign one message and never stores or sends it. You can check: <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">it's one file</a>.</p>
-      <p>Trying it for the first time? Use a test account.</p>
+      <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. This client asks for the phrase only because a fresh server has no app to approve from.</p>
     </div>
 
     <p class="muted" style="margin-top:32px">Finished? <code>node scripts/destroy.mjs</code> deletes everything, and billing stops.</p>
