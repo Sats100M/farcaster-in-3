@@ -117,7 +117,7 @@
   @media (max-width: 760px) { .flow { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 420px) { .flow { grid-template-columns: 1fr; } }
 
-  ol.plain { padding-left: 1.2em; margin: 14px 0 0; } ol.plain li { margin: 8px 0; }
+  ol.plain, ul.plain { padding-left: 1.2em; margin: 14px 0 0; } ol.plain li, ul.plain li { margin: 8px 0; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 16px; }
   th, td { text-align: left; padding: 16px 16px 16px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -324,7 +324,7 @@ curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># from anywhere</
     <details><summary>My cast isn't showing in other apps.</summary><p>Give it a few seconds. If it never appears, the relay was dropped under load. Post it again.</p></details>
 
     <h3>Go further</h3>
-    <ul>
+    <ul class="plain">
       <li><a href="https://docs.farcaster.xyz/learn/architecture/overview">Farcaster architecture</a>: what lives onchain and what lives on Snapchain.</li>
       <li><a href="https://snapchain.farcaster.xyz/guides/running-a-node">Running a node</a>: the official guide that step 1 automates.</li>
       <li><a href="https://docs.farcaster.xyz/developers/guides/basics/hello-world">Hello World</a>: create an account and post from code, with the same gasless key flow this client uses.</li>

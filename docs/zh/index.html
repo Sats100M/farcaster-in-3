@@ -117,7 +117,7 @@
   @media (max-width: 760px) { .flow { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 420px) { .flow { grid-template-columns: 1fr; } }
 
-  ol.plain { padding-left: 1.2em; margin: 14px 0 0; } ol.plain li { margin: 8px 0; }
+  ol.plain, ul.plain { padding-left: 1.2em; margin: 14px 0 0; } ol.plain li, ul.plain li { margin: 8px 0; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 16px; }
   th, td { text-align: left; padding: 16px 16px 16px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -324,7 +324,7 @@ curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># 在任何地方
     <details><summary>我的 cast 在其他 app 里看不到。</summary><p>等几秒钟。如果一直没出现，说明转发在高负载下被丢弃了。再发一次就好。</p></details>
 
     <h3>延伸阅读</h3>
-    <ul>
+    <ul class="plain">
       <li><a href="https://docs.farcaster.xyz/learn/architecture/overview">Farcaster 架构</a>：哪些在链上，哪些在 Snapchain 上。</li>
       <li><a href="https://snapchain.farcaster.xyz/guides/running-a-node">Running a node</a>：第 1 步自动化的就是这份官方指南。</li>
       <li><a href="https://docs.farcaster.xyz/developers/guides/basics/hello-world">Hello World</a>：用代码注册账号并发帖，用的也是本客户端这套免 gas 的密钥流程。</li>
