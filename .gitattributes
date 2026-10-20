@@ -1,2 +1,4 @@
+fc3 text eol=lf
 *.sh text eol=lf
-*.mjs text eol=lf
+*.cmd text eol=crlf
+docs/app/live.js -diff linguist-generated
