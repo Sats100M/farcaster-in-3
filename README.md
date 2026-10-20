@@ -4,24 +4,30 @@
 
 Run your own Farcaster read node and client in three commands. No API keys, no permission from anyone. You bring the server.
 
-Tutorial: https://sats100m.github.io/farcaster-in-3/
+Tutorial: https://sats100m.github.io/farcaster-in-3/ · Try the client in your browser: https://sats100m.github.io/farcaster-in-3/app/ · [中文](https://sats100m.github.io/farcaster-in-3/zh/)
 
 ```
-node scripts/provision.mjs --provider azure                        # 0. rent a server
-ssh ... "curl -fsSL .../scripts/node.sh | sudo bash -s -- --fid N"   # 1. Snapchain read node
-cd client && npm install && node fc.mjs init --node <server-ip>     # 2. your own client
+./fc3 provision --provider azure --hours 48   # 0. rent a server (deletes itself after 48 h)
+./fc3 node --fid <your fid>                    # 1. Snapchain read node, with HTTPS
+./fc3 client                                   # 2. your own client, in your browser
 ```
+
+On Windows, `.c3`. You need Node.js 20+, git, and a login for Azure, AWS or Hetzner. `./fc3 destroy` deletes everything.
 
 ## What's in here
 
-- `scripts/provision.mjs` creates a 4 vCPU / 16 GB server with a 2 TB disk and opens the Snapchain ports. Shows the price and asks before creating anything. `--provider azure|aws|lightsail|hetzner`.
+- `fc3` runs the three steps and remembers the server, so no IP is ever typed. Also `status`, `destroy`, `watchdog --hours N` (deletes the server after N hours, from your computer, so a forgotten test stops billing), `https`, `ssh`, and every client command (`./fc3 feed`, `./fc3 cast "hi"`).
+- `scripts/provision.mjs` creates a 4 vCPU / 16 GB server with a 2 TB disk and opens the Snapchain ports and 80/443. Shows the price and asks before creating anything. `--provider azure|aws|lightsail|hetzner`.
 - `scripts/destroy.mjs` deletes all of it so billing stops.
 - `scripts/node.sh` runs on the server. Wraps the official `snapchain.sh` installer so it works non-interactively over SSH, keeps the database on the data disk, and adds `fc-node-status`.
+- `scripts/https.sh` puts Caddy in front of the node's HTTP API with a free certificate for `<ip>.sslip.io`, and answers the CORS preflight the node doesn't, so web pages can post through it.
 - `scripts/reload-shard.sh` fixes a node that skipped a shard's snapshot (see below). `fc-node-status` tells you when you need it.
 - `client/fc.mjs` is the client. Imports a seed phrase once (or, with `init --wallet`, has MetaMask/Rabby/Coinbase Wallet sign on a local page so the phrase never leaves the wallet), registers its own gasless app key (`KEY_ADD`, no Optimism transaction), then: `feed`, `cast` (and `--reply`), `delete`, `follow`/`unfollow`, `like`/`unlike`, `recast`/`unrecast`, `--only-app` / `--hide-app` to include or exclude casts from any client, and `revoke`, which removes the app key without the seed phrase.
-- `fc serve --lan` is the same client as a mobile web page: scan the QR code on the same Wi-Fi to read, cast, reply, react, follow and filter by app from your phone. The app key stays on the computer; a password guards every request.
+- `fc serve` (what `./fc3 client` opens) is the same client as a web page. `--lan` prints a QR code for your phone. The app key stays on the computer; a password guards every request.
+- `client/live/` is that page with no server at all, published on the tutorial site: it runs in the browser, talks straight to a node over HTTPS, and gets its key from a browser wallet. Without a wallet you can still read anyone's feed.
+- `VOUCHER.md` is a checklist for testing it, from 10 minutes to the full run.
 
-The client only talks to your node: reads over gRPC, and writes go to the same node, which relays them to the validators.
+The client only talks to your node: reads over gRPC (or HTTPS in the browser), and writes go to the same node, which relays them to the validators.
 
 ## Status
 
@@ -33,6 +39,9 @@ The client only talks to your node: reads over gRPC, and writes go to the same n
 | Step 2 | yes, Windows 11, Node 22. Every command run on mainnet (init, cast, reply, like, recast, undo each, delete, follow, unfollow, app filters), each result checked against the node's API: [transcript](docs/evidence/mainnet-2026-10-19.txt) |
 | `init --wallet` | in CI with a stand-in wallet: the signatures match the seed phrase path byte for byte, and that path is the one proven on mainnet |
 | `serve` | feed, profiles and app filter read from the mainnet node, checked at phone width in light and dark mode; writes use the same calls as the commands above |
+| `fc3` | `provision` (finding an existing Azure node), `status`, `client`, passthrough commands, on Windows 11 in Git Bash and PowerShell. `watchdog` against a stand-in server: it called destroy at the deadline |
+| `https.sh` | yes, on the Azure node: certificate issued, preflight answered, live client reading through it |
+| Live client | reading feeds (mine and dwr's, 79 follows, apps filter) from the mainnet node in headless Chrome at phone size. Wallet connect is the same `buildKeyAdd` as above with the browser wallet as signer; not yet run with a real wallet |
 
 If you run it on a provider or OS not listed, an issue saying it worked (or didn't) helps.
 

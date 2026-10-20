@@ -153,7 +153,8 @@
     <a href="#start">开始使用</a>
     <a href="#how" class="opt">工作原理</a>
     <a href="#cost" class="opt">费用</a>
-    <a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a>
+    <a href="../app/">在线试用</a>
+    <a href="https://github.com/Sats100M/farcaster-in-3" class="opt">GitHub</a>
     <a href="../" lang="en" hreflang="en">English</a>
   </div>
 </nav>
@@ -164,14 +165,15 @@
     <p>在你租的服务器上跑一个 Snapchain read node（只读节点），再用一个只跟它通信的客户端发帖。不需要 API key，也不需要任何人批准。</p>
     <div class="links">
       <a href="#start">开始使用</a>
+      <a href="../app/">在线试用</a>
       <a href="https://github.com/Sats100M/farcaster-in-3">查看源码</a>
     </div>
   </div>
   <div class="commands">
     <ol>
-      <li><span class="n">0</span><div><span class="t">租一台服务器</span><code>node scripts/provision.mjs</code></div></li>
-      <li><span class="n">1</span><div><span class="t">启动只读节点</span><code>ssh … "curl …/node.sh | sudo bash"</code></div></li>
-      <li><span class="n">2</span><div><span class="t">用你自己的客户端发帖</span><code>node fc.mjs init --node &lt;your-server&gt;</code></div></li>
+      <li><span class="n">0</span><div><span class="t">租一台服务器</span><code>./fc3 provision</code></div></li>
+      <li><span class="n">1</span><div><span class="t">启动只读节点</span><code>./fc3 node</code></div></li>
+      <li><span class="n">2</span><div><span class="t">用你自己的客户端发帖</span><code>./fc3 client</code></div></li>
     </ol>
   </div>
   <p class="proof">2026 年 10 月在主网上完整跑通：从零同步一个节点，再通过它发出<a href="https://farcaster.xyz/sats100m/0xfdc3e931">第一条 cast</a>。</p>
@@ -201,52 +203,52 @@
   <div class="wrap narrow">
     <div class="eyebrow">开始使用</div>
     <h2>大约十分钟就能跑起来。</h2>
-    <p class="lead">另外还要等节点自己同步几个小时。你需要 Node.js 20 或更高版本，一个 Azure、AWS 或 Hetzner 账号，以及一个已购买存储空间、并且手上有 recovery phrase（助记词）的 Farcaster 账号。</p>
+    <p class="lead">另外还要等节点自己同步几个小时。你需要 Node.js 20 或更高版本、git、一个 Azure、AWS 或 Hetzner 账号，以及一个 Farcaster 账号。第一次请用测试账号。</p>
+    <p class="muted">只想先看看？直接在浏览器里<a href="../app/">在线试用客户端</a>，数据来自我的节点，什么都不用装。</p>
 
     <div class="step">
       <div class="label">第 0 步</div>
       <h3>租一台服务器。</h3>
       <div class="code"><pre>git clone https://github.com/Sats100M/farcaster-in-3
 cd farcaster-in-3
-az login                                   <span class="c"># 或者 aws login，或者在 .env 里设置 HCLOUD_TOKEN</span>
-node scripts/provision.mjs --provider azure</pre></div>
-      <p class="muted">它会先显示价格，经你确认后才创建任何资源：一台 4 vCPU、16 GB 内存、2 TB 硬盘的服务器，并开放 Snapchain 用到的端口。完成后会把第 1 步的命令打印给你。</p>
+az login                              <span class="c"># 或者 aws login，或者在 .env 里设置 HCLOUD_TOKEN</span>
+./fc3 provision --provider azure --hours 48</pre></div>
+      <p class="muted">它会先显示价格，经你确认后才创建任何资源：一台 4 vCPU、16 GB 内存、2 TB 硬盘的服务器，并开放 Snapchain 用到的端口。<code>--hours 48</code> 会在两天后自动删除服务器，忘了关也不会一直扣费。fc3 会记住这台服务器，之后不用再输入它的地址。Windows 上请输入 <code>.\fc3</code>。</p>
     </div>
 
     <div class="step">
       <div class="label">第 1 步</div>
       <h3>启动一个 Snapchain 只读节点。</h3>
-      <div class="code"><pre>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server-ip&gt; \
-  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh \
-   | sudo bash -s -- --fid &lt;your-fid&gt;"</pre></div>
-      <p class="muted">安装 Docker 和官方的 Snapchain 节点，然后开始同步。首次同步要下载一个 470 GB 的 snapshot（快照），需要好几个小时。在服务器上运行 <code>fc-node-status</code> 可以查看进度。</p>
+      <div class="code"><pre>./fc3 node --fid &lt;your-fid&gt;
+./fc3 status                          <span class="c"># 直到显示 "in sync"</span></pre></div>
+      <p class="muted">通过 SSH 安装 Docker 和官方 Snapchain 节点，给它的 API 加上 HTTPS，然后开始同步。第一次同步要下载约 470 GB 的快照，需要几个小时。FID 只用来决定每周自动升级是星期几。</p>
     </div>
 
     <div class="step">
       <div class="label">第 2 步</div>
       <h3>用你自己的客户端发帖。</h3>
-      <div class="code"><pre>cd client && npm install
-node fc.mjs init --node &lt;server-ip&gt;</pre></div>
-      <p class="muted">它只会问一次你的助记词，用它给这个客户端生成一个专属的 app key（应用密钥），然后立刻把助记词丢掉。之后就可以这样用：</p>
-      <div class="code"><pre>node fc.mjs feed
-node fc.mjs cast "posting from my own node"
-node fc.mjs follow dwr
-node fc.mjs like 3/0x…
-node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
-      <p class="muted">不想输入助记词？用 <code>init --wallet</code>：它会在你的电脑上打开一个页面，由 MetaMask、Rabby 或 Coinbase Wallet 来签名，助记词始终留在钱包里。</p>
+      <div class="code"><pre>./fc3 client</pre></div>
+      <p class="muted">它会安装客户端，只问一次你的助记词，用它给客户端生成一个专属的 app key（应用密钥），然后立刻把助记词丢掉，并在浏览器里打开客户端：看动态、发帖、回复、点赞、转发、关注，还能按应用筛选帖子。所有请求只发给你自己的节点。</p>
+      <p class="muted">不想输入助记词？用 <code>./fc3 client --wallet</code>：它会在你的电脑上打开一个页面，由 MetaMask、Rabby 或 Coinbase Wallet 来签名，助记词始终留在钱包里。</p>
+      <p class="muted">更喜欢命令行？同一个客户端也可以这样用：</p>
+      <div class="code"><pre>./fc3 feed
+./fc3 cast "posting from my own node"
+./fc3 follow dwr
+./fc3 like 3/0x…
+./fc3 feed --hide-app &lt;app&gt;</pre></div>
 
       <h3 style="margin-top:40px;font-size:22px">在手机上用。</h3>
-      <div class="code"><pre>node fc.mjs serve --lan</pre></div>
-      <p class="muted">把同一个客户端变成网页，并打印一个二维码。在同一个 Wi-Fi 下用手机扫码就能登录：看动态、发帖、回复、点赞、转发、关注，还能按应用筛选。app key 一直留在你的电脑上，每个请求都要密码，所有读写只经过你自己的节点。</p>
-      <img class="phone" src="../web-client.png" alt="手机上的网页客户端：发帖框、应用筛选，以及标注 via @warpcast 的 balajis.eth 帖子" loading="lazy">
+      <div class="code"><pre>./fc3 client --lan</pre></div>
+      <p class="muted">它会打印一个二维码。在同一个 Wi-Fi 下用手机扫码就能登录。app key 一直留在你的电脑上，每个请求都要密码，所有读写依然只经过你自己的节点。</p>
+      <img class="phone" src="../web-client.png" alt="手机上的客户端：发帖框、应用筛选，以及标注 via @warpcast 的 balajis.eth 帖子" loading="lazy">
     </div>
 
     <div class="note">
       <p><strong>对待助记词，要像对待 <code>rm -rf</code> 一样小心。</strong>谁拿到它，谁就能控制你的账号。只把它粘贴到你读过代码或者信得过的软件里。这个客户端只在内存里用它签一条消息，既不保存，也不会把它发送到任何地方。你可以自己检查：<a href="https://github.com/Sats100M/farcaster-in-3/tree/main/client">整个客户端只有几个短文件</a>。</p>
-      <p>第一次尝试？请用测试账号。如果某个应用支持委托签名（delegated signing），也就是在已经登录你账号的应用里批准它的密钥，优先用这种方式：助记词不用离开你的手机。如果你的电脑上装了浏览器钱包，<code>init --wallet</code> 就很接近这种方式：由钱包签名，助记词根本不会交给这个客户端。</p>
+      <p>第一次尝试？请用测试账号。如果某个应用支持委托签名（delegated signing），也就是在已经登录你账号的应用里批准它的密钥，优先用这种方式：助记词不用离开你的手机。如果你的电脑上装了浏览器钱包，<code>--wallet</code> 就很接近这种方式：由钱包签名，助记词根本不会交给这个客户端。</p>
     </div>
 
-    <p class="muted" style="margin-top:32px">用完了？<code>node scripts/destroy.mjs</code> 会删除所有资源，计费随之停止。</p>
+    <p class="muted" style="margin-top:32px">用完了？<code>./fc3 destroy</code> 会删除所有资源，计费随之停止。帮别人测试？<a href="https://github.com/Sats100M/farcaster-in-3/blob/main/VOUCHER.md">VOUCHER.md</a> 里有一份检查清单。</p>
   </div>
 </section>
 
@@ -315,9 +317,9 @@ node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
 
     <h3>按客户端过滤</h3>
     <p>每个 app key 都记录着申请它的那个 app 的 FID。所以你的节点知道每条 cast 来自哪个 app，而且不需要信任这个 app。</p>
-    <div class="code"><pre>node fc.mjs apps dwr                 <span class="c"># 看某人用哪些 app 发帖</span>
-node fc.mjs feed --only-app &lt;app&gt;    <span class="c"># 只看这个 app</span>
-node fc.mjs feed --hide-app &lt;app&gt;    <span class="c"># 除了它，其他都看</span></pre></div>
+    <div class="code"><pre>./fc3 apps dwr                 <span class="c"># 看某人用哪些 app 发帖</span>
+./fc3 feed --only-app &lt;app&gt;    <span class="c"># 只看这个 app</span>
+./fc3 feed --hide-app &lt;app&gt;    <span class="c"># 除了它，其他都看</span></pre></div>
   </div>
 </section>
 

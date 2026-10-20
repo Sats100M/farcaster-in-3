@@ -88,10 +88,20 @@
   .apps { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
 
   .empty, .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
-  .login { max-width: 360px; margin: 18vh auto 0; padding: 0 16px; }
+  .login { max-width: 400px; margin: 12vh auto 40px; padding: 0 16px; }
   .login h1 { letter-spacing: -0.02em; }
   .login input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--alt); margin: 8px 0 12px; }
   .login .btn { width: 100%; padding: 12px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; }
+  .btn.small { padding: 6px 14px; font-size: 14px; }
+  .login .or { text-align: center; color: var(--muted); font-size: 13px; margin: 28px 0 10px; }
+  .login .look, .login .nodeform { display: flex; gap: 8px; }
+  .login .look input, .login .nodeform input { margin: 0; flex: 1; min-width: 0; }
+  .login .look .btn, .login .nodeform .btn { width: auto; }
+  .login details { margin-top: 22px; font-size: 14px; color: var(--muted); }
+  .login summary { cursor: pointer; margin-bottom: 8px; }
+  .hint.readonly { padding: 14px 16px; border-bottom: 8px solid var(--alt); }
   .toast {
     position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 10;
     background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px);
@@ -136,7 +146,19 @@ function toast(msg, bad = false) {
   toastTimer = setTimeout(() => (t.className = 'toast'), bad ? 5000 : 2200);
 }
 
+// On the tutorial site (live/live.mjs) there's no server: window.FC_LIVE answers
+// the same calls straight from a node, in the browser.
+const LIVE = window.FC_LIVE;
+
 async function api(path, body) {
+  if (LIVE) {
+    try {
+      return await LIVE.api(path, body);
+    } catch (err) {
+      if (err.status === 401) showLogin();
+      throw err;
+    }
+  }
   const res = await fetch(path, body
     ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
     : {});
@@ -181,6 +203,7 @@ const pfp = (p, cls = 'pfp') => h('img', { class: cls, src: p.pfp || 'data:,', a
 // --- views ---------------------------------------------------------------
 
 function showLogin() {
+  if (LIVE) return $app.replaceChildren(LIVE.loginView(start, h, toast));
   $app.replaceChildren(h('form', { class: 'login', onsubmit: async (e) => {
     e.preventDefault();
     try {
@@ -200,7 +223,9 @@ function header() {
     h('span', { class: 'node', title: 'All reads and writes go through this node' }, me.node),
     h('form', { onsubmit: (e) => { e.preventDefault(); const u = e.target.u.value.trim().replace(/^@/, ''); if (u) go('#/u/' + u); } },
       h('input', { class: 'search', name: 'u', placeholder: 'Go to @user', autocapitalize: 'none', autocorrect: 'off' })),
-    h('a', { class: 'me', href: '#/u/' + me.username, title: '@' + me.username }, h('img', { src: me.pfp || 'data:,', alt: '' }))));
+    me.readOnly
+      ? h('button', { class: 'btn small', onclick: () => { LIVE.signOut(); showLogin(); } }, 'Connect')
+      : h('a', { class: 'me', href: '#/u/' + me.username, title: '@' + me.username }, h('img', { src: me.pfp || 'data:,', alt: '' }))));
 }
 
 // On someone else's profile the composer stays hidden until you tap Reply.
@@ -284,7 +309,7 @@ function castView(c, { onReply, onChange }) {
       c.embeds.length > 0 && h('div', { class: 'embeds' }, c.embeds.map((e) =>
         e.url ? (isImage(e.url) ? h('img', { src: e.url, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('a', { class: 'link', href: e.url, target: '_blank', rel: 'noopener noreferrer' }, e.url))
           : h('div', { class: 'context' }, 'quotes cast ' + e.cast.slice(0, 18) + '…'))),
-      h('div', { class: 'actions' },
+      !me.readOnly && h('div', { class: 'actions' },
         h('button', { onclick: () => onReply(c) }, '↩ Reply'),
         recast, like,
         c.mine && h('button', { class: 'del', onclick: async (e) => {
@@ -310,7 +335,9 @@ async function feedView() {
   const list = h('div', {}, h('div', { class: 'loading' }, 'Reading your feed from your node…'));
   const comp = composer(() => setTimeout(load, 1500));
   const chipsSlot = h('div');
-  $app.replaceChildren(header(), h('main', { class: 'wrap' }, comp.el, chipsSlot, list));
+  $app.replaceChildren(header(), h('main', { class: 'wrap' },
+    me.readOnly ? h('div', { class: 'hint readonly' }, 'Reading @' + me.username + "'s feed straight from the node. Connect a wallet to post.") : comp.el,
+    chipsSlot, list));
 
   async function load() {
     try {
@@ -337,7 +364,7 @@ async function userView(name) {
   $app.replaceChildren(header(), h('main', { class: 'wrap' }, list));
   try {
     const u = await api('/api/user?u=' + encodeURIComponent(name));
-    const followBtn = !u.self && h('button', { class: 'btn' + (u.following ? ' ghost' : '') }, u.following ? 'Following' : 'Follow');
+    const followBtn = !u.self && !me.readOnly && h('button', { class: 'btn' + (u.following ? ' ghost' : '') }, u.following ? 'Following' : 'Follow');
     followBtn && followBtn.addEventListener('click', async () => {
       followBtn.disabled = true;
       try {
@@ -355,7 +382,11 @@ async function userView(name) {
         h('img', { src: u.pfp || 'data:,', alt: '' }),
         h('div', {}, h('h2', {}, u.displayName || u.username), h('div', { class: 'user' }, '@' + u.username + ' · FID ' + u.fid)),
         followBtn || h('span'),
-        u.apps.length > 0 && h('div', { class: 'apps' }, 'Posts from: ' + u.apps.map((a) => '@' + a.username + ' (' + a.casts + ')').join(', '))),
+        u.apps.length > 0 && h('div', { class: 'apps' }, 'Posts from: ' + u.apps.map((a) => '@' + a.username + ' (' + a.casts + ')').join(', ')),
+        LIVE && u.self && h('div', { class: 'apps' }, h('button', { class: 'more', onclick: async (e) => {
+          if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Your wallet will sign the removal. Tap again'; return; }
+          try { await api('/api/revoke', {}); toast('Key removed from your account'); showLogin(); } catch (err) { toast(err.message, true); }
+        } }, "Remove this browser's key"))),
       comp.el,
       ...(u.casts.length ? u.casts.map((c) => castView(c, { onReply: comp.setReply, onChange: () => userView(name) })) : [h('div', { class: 'empty' }, 'No casts yet.')]));
   } catch (err) {
@@ -376,14 +407,15 @@ async function start() {
   try {
     me = await api('/api/me');
   } catch { return; }
-  window.addEventListener('hashchange', route);
+  if (!start.listening) window.addEventListener('hashchange', route);
+  start.listening = true;
   route();
 }
 
 // A QR code from `fc serve --lan` carries the password after #, which never
 // reaches the server in a URL. Log in with it, then drop it from the address bar.
 (async () => {
-  const fromQr = location.hash.length > 1 && !location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(1)) : '';
+  const fromQr = !LIVE && location.hash.length > 1 && !location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(1)) : '';
   if (fromQr) {
     history.replaceState(null, '', location.pathname);
     try { await api('/api/login', { password: fromQr }); } catch (err) { toast(err.message, true); }

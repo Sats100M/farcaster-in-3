@@ -15,6 +15,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { az, requireLogin, GROUP, TAG } from './az.mjs';
+import { ready, saveServer } from '../../server.mjs';
 
 // eastus sits next to most of Snapchain's bootstrap peers.
 const LOCATION = process.env.AZURE_LOCATION || 'eastus';
@@ -41,7 +42,8 @@ try {
 }
 if (existingIp !== undefined) {
   console.log(`You already have a node${existingIp ? ` at ${existingIp}` : ''} (resource group ${GROUP}).`);
-  console.log('Run `node scripts/destroy.mjs --provider azure` first if you want a fresh one.');
+  if (existingIp) saveServer({ provider: 'azure', ip: existingIp, user: USER });
+  console.log('It is saved, so ./fc3 node and ./fc3 client will use it. For a fresh one, run ./fc3 destroy first.');
   process.exit(0);
 }
 
@@ -187,7 +189,14 @@ az([
   '--priority', '1010', '--direction', 'Inbound', '--access', 'Allow',
   '--protocol', '*', '--destination-port-ranges', '3381-3383',
 ], { quiet: true });
-console.log('✓ firewall: ports 22, 3381-3383 open');
+// 80 for the HTTPS certificate check, 443 for web clients (scripts/https.sh).
+az([
+  'network', 'nsg', 'rule', 'create',
+  '-g', GROUP, '--nsg-name', `${NAME}-nsg`, '-n', 'https',
+  '--priority', '1020', '--direction', 'Inbound', '--access', 'Allow',
+  '--protocol', 'Tcp', '--destination-port-ranges', '80', '443',
+], { quiet: true });
+console.log('✓ firewall: ports 22, 80, 443, 3381-3383 open');
 
 process.stdout.write('  waiting for SSH');
 for (let i = 0; i < 30; i++) {
@@ -202,13 +211,4 @@ for (let i = 0; i < 30; i++) {
   }
 }
 
-console.log(`
-
-Done. Your server is ready.
-
-Next, command 1 (installs and starts the read node):
-
-  ssh -i "${KEY_PATH}" ${USER}@${ip} "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid YOUR_FID"
-
-Your node's API will be at http://${ip}:3381 once it has synced.
-`);
+ready({ provider: 'azure', ip, user: USER });

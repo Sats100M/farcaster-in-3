@@ -16,6 +16,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { api, requireToken, waitForAction, sleep, LABEL, LABELS } from './api.mjs';
+import { ready, saveServer } from '../../server.mjs';
 
 const LOCATION = process.env.LOCATION || 'nbg1';
 const VOLUME_GB = Number(process.env.VOLUME_GB || 2048);
@@ -34,7 +35,8 @@ const existing = (await api('GET', `/servers?label_selector=${LABEL}`)).servers;
 if (existing.length) {
   const s = existing[0];
   console.log(`You already have a node: ${s.name} at ${s.public_net.ipv4.ip}`);
-  console.log('Run `node scripts/destroy.mjs --provider hetzner` first if you want a fresh one.');
+  saveServer({ provider: 'hetzner', ip: s.public_net.ipv4.ip, user: 'root' });
+  console.log('It is saved, so ./fc3 node and ./fc3 client will use it. For a fresh one, run ./fc3 destroy first.');
   process.exit(0);
 }
 
@@ -109,7 +111,7 @@ if (!sshKey) {
     .ssh_key;
 }
 
-// --- Firewall: 22 for you, 3381-3383 for the Farcaster network ---
+// --- Firewall: 22 for you, 3381-3383 for the Farcaster network, 80/443 for HTTPS ---
 
 const anywhere = ['0.0.0.0/0', '::/0'];
 // Reuse the firewall from an earlier, interrupted run if there is one.
@@ -121,6 +123,8 @@ const firewall = (await api('GET', `/firewalls?label_selector=${LABEL}`)).firewa
     { description: 'Snapchain HTTP API', direction: 'in', protocol: 'tcp', port: '3381', source_ips: anywhere },
     { description: 'Snapchain gossip (QUIC)', direction: 'in', protocol: 'udp', port: '3382', source_ips: anywhere },
     { description: 'Snapchain gRPC API', direction: 'in', protocol: 'tcp', port: '3383', source_ips: anywhere },
+    { description: 'HTTPS certificate check', direction: 'in', protocol: 'tcp', port: '80', source_ips: anywhere },
+    { description: 'HTTPS for web clients', direction: 'in', protocol: 'tcp', port: '443', source_ips: anywhere },
   ],
 })).firewall;
 console.log(`✓ firewall ${firewall.name}`);
@@ -194,13 +198,4 @@ for (let i = 0; i < 30; i++) {
   }
 }
 
-console.log(`
-
-Done. Your server is ready.
-
-Next, command 1 (installs and starts the read node):
-
-  ssh -i "${KEY_PATH}" root@${ip} "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | bash -s -- --fid YOUR_FID"
-
-Your node's API will be at http://${ip}:3381 once it has synced.
-`);
+ready({ provider: 'hetzner', ip, user: 'root' });

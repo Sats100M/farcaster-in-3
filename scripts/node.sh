@@ -10,13 +10,16 @@
 #
 # --fid is your Farcaster ID. It is only used to schedule the weekly auto-upgrade
 # on a day derived from your FID; no keys or secrets are involved.
+# --https also puts HTTPS in front of the API (scripts/https.sh), for web clients.
 
 set -euo pipefail
 
 FID=""
+HTTPS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --fid) FID="$2"; shift 2 ;;
+    --https) HTTPS=1; shift ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -140,6 +143,10 @@ EOF
 chmod +x /usr/local/bin/fc-node-status
 
 IP=$(curl -s --max-time 5 https://api.ipify.org || hostname -I | awk '{print $1}')
+
+if (( HTTPS )); then
+  curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/https.sh | bash ||     echo "! HTTPS setup failed; the node itself is fine. Retry later: curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/https.sh | sudo bash"
+fi
 cat <<EOF
 
 ✓ Snapchain read node is starting.

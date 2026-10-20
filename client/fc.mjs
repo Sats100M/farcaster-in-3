@@ -253,6 +253,7 @@ async function serveWeb() {
     port: Number(flags.port || 3000),
     host: flags.lan ? '0.0.0.0' : flags.host || '127.0.0.1',
     password: flags.password || process.env.FC_PASSWORD,
+    open: Boolean(flags.open),
   });
   await new Promise(() => {}); // keep serving until Ctrl+C
 }

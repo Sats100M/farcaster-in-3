@@ -18,6 +18,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { aws, requireLogin, REGION, TAG_KEY, TAG_VALUE } from '../aws/cli.mjs';
+import { ready, saveServer } from '../../server.mjs';
 
 const DISK_GB = Number(process.env.DISK_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
@@ -34,7 +35,8 @@ console.log(`AWS account ${identity.Account}, Lightsail region ${REGION}`);
 try {
   const { instance } = aws(['lightsail', 'get-instance', '--instance-name', NAME], { quiet: true });
   console.log(`You already have a node: ${NAME} at ${instance.publicIpAddress}`);
-  console.log('Run `node scripts/destroy.mjs --provider lightsail` first if you want a fresh one.');
+  if (instance.publicIpAddress) saveServer({ provider: 'lightsail', ip: instance.publicIpAddress, user: USER });
+  console.log('It is saved, so ./fc3 node and ./fc3 client will use it. For a fresh one, run ./fc3 destroy first.');
   process.exit(0);
 } catch {
   // Not found: carry on.
@@ -120,8 +122,10 @@ aws(['lightsail', 'put-instance-public-ports', '--instance-name', NAME, '--port-
   'fromPort=3381,toPort=3381,protocol=tcp',
   'fromPort=3382,toPort=3382,protocol=udp',
   'fromPort=3383,toPort=3383,protocol=tcp',
+  'fromPort=80,toPort=80,protocol=tcp', // HTTPS certificate check (scripts/https.sh)
+  'fromPort=443,toPort=443,protocol=tcp', // HTTPS for web clients
 ], { quiet: true });
-console.log('✓ firewall: ports 22, 3381-3383 open');
+console.log('✓ firewall: ports 22, 80, 443, 3381-3383 open');
 
 const ip = instance.publicIpAddress;
 process.stdout.write(`  waiting for SSH on ${ip}`);
@@ -137,13 +141,4 @@ for (let i = 0; i < 40; i++) {
   }
 }
 
-console.log(`
-
-Done. Your server is ready.
-
-Next, command 1 (installs and starts the read node):
-
-  ssh -i "${KEY_PATH}" ${USER}@${ip} "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid YOUR_FID"
-
-Your node's API will be at http://${ip}:3381 once it has synced.
-`);
+ready({ provider: 'lightsail', ip, user: USER });

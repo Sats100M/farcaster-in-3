@@ -19,7 +19,7 @@ jobs:
         run: shellcheck scripts/*.sh
 
       - name: syntax-check scripts
-        run: for f in scripts/*.mjs scripts/providers/*/*.mjs client/*.mjs; do node --check "$f"; done
+        run: for f in fc3.mjs scripts/*.mjs scripts/providers/*/*.mjs client/*.mjs client/live/*.mjs; do node --check "$f"; done
 
       - name: client installs, passes its tests and starts
         working-directory: client
@@ -27,6 +27,13 @@ jobs:
           npm ci
           npm test
           node fc.mjs | grep -q "fc init"
+          npm run build:live
+
+      - name: fc3 starts and asks for a server first
+        run: |
+          ./fc3 | grep -q "fc3 provision"
+          out=$(./fc3 status 2>&1 || true)
+          echo "$out" | grep -q "No server yet"
 
       - name: provision refuses to run without credentials
         run: |

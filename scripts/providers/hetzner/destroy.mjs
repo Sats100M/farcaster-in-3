@@ -4,6 +4,7 @@
 // Usage:  node scripts/destroy.mjs --provider hetzner [--yes]
 
 import { createInterface } from 'node:readline/promises';
+import { forgetServer } from '../../server.mjs';
 import { api, requireToken, waitForAction, sleep, LABEL } from './api.mjs';
 
 requireToken();
@@ -26,6 +27,7 @@ const { volumes } = await api('GET', `/volumes${q}`);
 const { firewalls } = await api('GET', `/firewalls${q}`);
 
 if (!servers.length && !volumes.length && !firewalls.length) {
+  forgetServer();
   console.log('Nothing to delete.');
   process.exit(0);
 }
@@ -56,4 +58,5 @@ for (const f of firewalls) {
   await retry(() => api('DELETE', `/firewalls/${f.id}`));
   console.log(`✓ deleted firewall ${f.name}`);
 }
+forgetServer();
 console.log('All gone. Billing for these resources has stopped.');

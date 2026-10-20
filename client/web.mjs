@@ -19,11 +19,12 @@ import {
   bytesToHexString,
 } from '@farcaster/hub-nodejs';
 import { parseCastId, castText, castByteLength, MAX_CAST_BYTES } from './lib.mjs';
+import { openBrowser } from './wallet.mjs';
 import { call, loadConfig, submit, resolveFid, profile, loadKeys, appOf, feedCasts } from './hub.mjs';
 
 const PAGE = new URL('./web/index.html', import.meta.url);
 
-export async function serve({ node, port = 3000, host = '127.0.0.1', password }) {
+export async function serve({ node, port = 3000, host = '127.0.0.1', password, open = false }) {
   const cfg = loadConfig(node);
   const { client, signer, dataOptions, fid: me } = cfg;
   await call(client.getInfo({ dbStats: false }), `reach node ${node || cfg.node}`);
@@ -215,4 +216,6 @@ export async function serve({ node, port = 3000, host = '127.0.0.1', password })
     console.log('Only this computer can open it. For your phone on the same Wi-Fi: fc serve --lan');
   }
   console.log('Ctrl+C to stop.');
+  // The password rides after #, so the tab logs itself in.
+  if (open) openBrowser(`http://127.0.0.1:${port}/#${encodeURIComponent(password)}`);
 }

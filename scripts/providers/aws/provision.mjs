@@ -15,6 +15,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { aws, requireLogin, REGION, TAG_KEY, TAG_VALUE, NAME_FILTER } from './cli.mjs';
+import { ready, saveServer } from '../../server.mjs';
 
 const DISK_GB = Number(process.env.DISK_GB || 2048);
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
@@ -35,7 +36,8 @@ const running = aws(['ec2', 'describe-instances', '--filters', NAME_FILTER, 'Nam
 }).Reservations.flatMap((r) => r.Instances);
 if (running.length) {
   console.log(`You already have a node: ${running[0].InstanceId} at ${running[0].PublicIpAddress ?? '(no IP yet)'}`);
-  console.log('Run `node scripts/destroy.mjs --provider aws` first if you want a fresh one.');
+  if (running[0].PublicIpAddress) saveServer({ provider: 'aws', ip: running[0].PublicIpAddress, user: USER });
+  console.log('It is saved, so ./fc3 node and ./fc3 client will use it. For a fresh one, run ./fc3 destroy first.');
   process.exit(0);
 }
 
@@ -91,9 +93,11 @@ if (!sgId) {
     open('tcp', 3381), // Snapchain HTTP API
     open('udp', 3382), // Snapchain gossip (QUIC)
     open('tcp', 3383), // Snapchain gRPC API
+    open('tcp', 80),   // HTTPS certificate check (scripts/https.sh)
+    open('tcp', 443),  // HTTPS for web clients
   ], { quiet: true });
 }
-console.log(`✓ security group ${sgId}: ports 22, 3381-3383 open`);
+console.log(`✓ security group ${sgId}: ports 22, 80, 443, 3381-3383 open`);
 
 // --- Instance ---
 
@@ -142,13 +146,4 @@ for (let i = 0; i < 30; i++) {
   }
 }
 
-console.log(`
-
-Done. Your server is ready.
-
-Next, command 1 (installs and starts the read node):
-
-  ssh -i "${KEY_PATH}" ${USER}@${ip} "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh | sudo bash -s -- --fid YOUR_FID"
-
-Your node's API will be at http://${ip}:3381 once it has synced.
-`);
+ready({ provider: 'aws', ip, user: USER });

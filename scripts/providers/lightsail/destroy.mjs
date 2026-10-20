@@ -3,6 +3,7 @@
 // Usage:  node scripts/destroy.mjs --provider lightsail [--yes]
 
 import { createInterface } from 'node:readline/promises';
+import { forgetServer } from '../../server.mjs';
 import { aws, requireLogin } from '../aws/cli.mjs';
 
 const NAME = process.env.SERVER_NAME || 'snapchain-1';
@@ -21,6 +22,7 @@ const instance = find(['get-instance', '--instance-name', NAME], 'instance');
 const disk = find(['get-disk', '--disk-name', DISK_NAME], 'disk');
 
 if (!instance && !disk) {
+  forgetServer();
   console.log('Nothing to delete.');
   process.exit(0);
 }
@@ -55,4 +57,5 @@ if (disk) {
   }
   console.log(`✓ deleted disk ${DISK_NAME}`);
 }
+forgetServer();
 console.log('All gone. Billing for these resources has stopped.');

@@ -153,7 +153,8 @@
     <a href="#start">Get started</a>
     <a href="#how" class="opt">How it works</a>
     <a href="#cost" class="opt">Cost</a>
-    <a href="https://github.com/Sats100M/farcaster-in-3">GitHub</a>
+    <a href="app/">Try it live</a>
+    <a href="https://github.com/Sats100M/farcaster-in-3" class="opt">GitHub</a>
     <a href="zh/" lang="zh-CN" hreflang="zh-CN">中文</a>
   </div>
 </nav>
@@ -164,14 +165,15 @@
     <p>Run a Snapchain read node on a server you rent, and post from a client that talks only to it. No API keys. No one's permission.</p>
     <div class="links">
       <a href="#start">Get started</a>
+      <a href="app/">Try it live</a>
       <a href="https://github.com/Sats100M/farcaster-in-3">View the source</a>
     </div>
   </div>
   <div class="commands">
     <ol>
-      <li><span class="n">0</span><div><span class="t">Rent a server</span><code>node scripts/provision.mjs</code></div></li>
-      <li><span class="n">1</span><div><span class="t">Start a read node</span><code>ssh … "curl …/node.sh | sudo bash"</code></div></li>
-      <li><span class="n">2</span><div><span class="t">Post from your own client</span><code>node fc.mjs init --node &lt;your-server&gt;</code></div></li>
+      <li><span class="n">0</span><div><span class="t">Rent a server</span><code>./fc3 provision</code></div></li>
+      <li><span class="n">1</span><div><span class="t">Start a read node</span><code>./fc3 node</code></div></li>
+      <li><span class="n">2</span><div><span class="t">Post from your own client</span><code>./fc3 client</code></div></li>
     </ol>
   </div>
   <p class="proof">Tested end to end on mainnet, October 2026: a node synced from scratch, then <a href="https://farcaster.xyz/sats100m/0xfdc3e931">the first cast sent through it</a>.</p>
@@ -201,52 +203,52 @@
   <div class="wrap narrow">
     <div class="eyebrow">Get started</div>
     <h2>Up and running in about ten minutes.</h2>
-    <p class="lead">Plus a few hours while the node syncs on its own. You'll need Node.js 20 or later, an Azure, AWS or Hetzner account, and a Farcaster account with storage and its recovery phrase.</p>
+    <p class="lead">Plus a few hours while the node syncs on its own. You'll need Node.js 20 or later, git, an Azure, AWS or Hetzner account, and a Farcaster account. Use a test account the first time.</p>
+    <p class="muted">Just want to see it? <a href="app/">Try the client live</a> in this browser, reading from my node. Nothing to install.</p>
 
     <div class="step">
       <div class="label">Step 0</div>
       <h3>Rent a server.</h3>
       <div class="code"><pre>git clone https://github.com/Sats100M/farcaster-in-3
 cd farcaster-in-3
-az login                                   <span class="c"># or aws login, or HCLOUD_TOKEN in .env</span>
-node scripts/provision.mjs --provider azure</pre></div>
-      <p class="muted">It shows the price and asks before creating anything: a 4 vCPU, 16 GB server with a 2 TB disk and the Snapchain ports open. Then it prints step 1 for you.</p>
+az login                              <span class="c"># or aws login, or HCLOUD_TOKEN in .env</span>
+./fc3 provision --provider azure --hours 48</pre></div>
+      <p class="muted">It shows the price and asks before creating anything: a 4 vCPU, 16 GB server with a 2 TB disk and the Snapchain ports open. <code>--hours 48</code> deletes it for you after two days, so a forgotten test can't keep billing you. fc3 remembers the server, so you never type its address. On Windows, type <code>.c3</code>.</p>
     </div>
 
     <div class="step">
       <div class="label">Step 1</div>
       <h3>Start a Snapchain read node.</h3>
-      <div class="code"><pre>ssh -i ~/.ssh/farcaster_node azureuser@&lt;server-ip&gt; \
-  "curl -fsSL https://raw.githubusercontent.com/Sats100M/farcaster-in-3/main/scripts/node.sh \
-   | sudo bash -s -- --fid &lt;your-fid&gt;"</pre></div>
-      <p class="muted">Installs Docker and the official Snapchain node and starts syncing. The first sync downloads a 470 GB snapshot and takes several hours. Run <code>fc-node-status</code> on the server to watch it.</p>
+      <div class="code"><pre>./fc3 node --fid &lt;your-fid&gt;
+./fc3 status                          <span class="c"># until it says "in sync"</span></pre></div>
+      <p class="muted">Installs Docker and the official Snapchain node over SSH, puts HTTPS in front of its API, and starts syncing. The first sync downloads a 470 GB snapshot and takes a few hours. Your FID only picks the day of the weekly auto-upgrade.</p>
     </div>
 
     <div class="step">
       <div class="label">Step 2</div>
       <h3>Post from your own client.</h3>
-      <div class="code"><pre>cd client && npm install
-node fc.mjs init --node &lt;server-ip&gt;</pre></div>
-      <p class="muted">Asks for your recovery phrase once, uses it to give this client its own app key, then forgets it. After that:</p>
-      <div class="code"><pre>node fc.mjs feed
-node fc.mjs cast "posting from my own node"
-node fc.mjs follow dwr
-node fc.mjs like 3/0x…
-node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
-      <p class="muted">Rather not type the phrase? <code>init --wallet</code> opens a page on your computer, and MetaMask, Rabby or Coinbase Wallet signs instead. The phrase stays in the wallet.</p>
+      <div class="code"><pre>./fc3 client</pre></div>
+      <p class="muted">Installs the client, asks for your recovery phrase once to give the client its own app key, forgets the phrase, and opens the client in your browser: feed, casts, replies, likes, recasts, follows, and a filter for which app each cast came from. Every request goes to your node and nowhere else.</p>
+      <p class="muted">Rather not type the phrase? <code>./fc3 client --wallet</code> opens a page on your computer, and MetaMask, Rabby or Coinbase Wallet signs instead. The phrase stays in the wallet.</p>
+      <p class="muted">Prefer the terminal? The same client works as commands:</p>
+      <div class="code"><pre>./fc3 feed
+./fc3 cast "posting from my own node"
+./fc3 follow dwr
+./fc3 like 3/0x…
+./fc3 feed --hide-app &lt;app&gt;</pre></div>
 
       <h3 style="margin-top:40px;font-size:22px">On your phone.</h3>
-      <div class="code"><pre>node fc.mjs serve --lan</pre></div>
-      <p class="muted">Turns the same client into a web page and prints a QR code. Scan it on the same Wi-Fi and you're logged in: feed, casting, replies, likes, recasts, follows and the app filter. The app key stays on your computer, a password guards every request, and it only goes through your node.</p>
-      <img class="phone" src="web-client.png" alt="The web client on a phone: a compose box, an app filter, and casts from balajis.eth marked via @warpcast" loading="lazy">
+      <div class="code"><pre>./fc3 client --lan</pre></div>
+      <p class="muted">Prints a QR code. Scan it on the same Wi-Fi and you're logged in. The app key stays on your computer, a password guards every request, and it still only goes through your node.</p>
+      <img class="phone" src="web-client.png" alt="The client on a phone: a compose box, an app filter, and casts from balajis.eth marked via @warpcast" loading="lazy">
     </div>
 
     <div class="note">
       <p><strong>Treat your recovery phrase like <code>rm -rf</code>.</strong> It controls your account. Only paste it into software you've read or trust. This client uses it in memory to sign one message and never stores or sends it. You can check: <a href="https://github.com/Sats100M/farcaster-in-3/tree/main/client">the whole client is a few short files</a>.</p>
-      <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. On a computer with a browser wallet, <code>init --wallet</code> gets you most of the way there: the wallet signs and the phrase never reaches this client.</p>
+      <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. On a computer with a browser wallet, <code>--wallet</code> gets you most of the way there: the wallet signs and the phrase never reaches this client.</p>
     </div>
 
-    <p class="muted" style="margin-top:32px">Finished? <code>node scripts/destroy.mjs</code> deletes everything, and billing stops.</p>
+    <p class="muted" style="margin-top:32px">Finished? <code>./fc3 destroy</code> deletes everything, and billing stops. Testing it for someone? <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/VOUCHER.md">VOUCHER.md</a> has a checklist.</p>
   </div>
 </section>
 
@@ -315,9 +317,10 @@ node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
 
     <h3>Filter by client</h3>
     <p>Every app key records the FID of the app that asked for it. So your node knows which app every cast came from, without trusting the app.</p>
-    <div class="code"><pre>node fc.mjs apps dwr                 <span class="c"># which apps someone posts from</span>
-node fc.mjs feed --only-app &lt;app&gt;    <span class="c"># just that app</span>
-node fc.mjs feed --hide-app &lt;app&gt;    <span class="c"># everything but</span></pre></div>
+    <div class="code"><pre>./fc3 apps dwr                 <span class="c"># which apps someone posts from</span>
+./fc3 feed --only-app &lt;app&gt;    <span class="c"># just that app</span>
+./fc3 feed --hide-app &lt;app&gt;    <span class="c"># everything but</span></pre></div>
+    <p>In the browser client, tap the app on any cast, or the chips above the feed. <a href="app/">Try it on a real feed</a>.</p>
   </div>
 </section>
 

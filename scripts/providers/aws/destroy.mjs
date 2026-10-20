@@ -3,6 +3,7 @@
 // Usage:  node scripts/destroy.mjs --provider aws [--yes]
 
 import { createInterface } from 'node:readline/promises';
+import { forgetServer } from '../../server.mjs';
 import { aws, requireLogin, NAME_FILTER } from './cli.mjs';
 
 requireLogin();
@@ -13,6 +14,7 @@ const instances = aws(['ec2', 'describe-instances', '--filters', NAME_FILTER,
 const groups = aws(['ec2', 'describe-security-groups', '--filters', NAME_FILTER], { quiet: true }).SecurityGroups;
 
 if (!instances.length && !groups.length) {
+  forgetServer();
   console.log('Nothing to delete.');
   process.exit(0);
 }
@@ -40,4 +42,5 @@ for (const g of groups) {
   aws(['ec2', 'delete-security-group', '--group-id', g.GroupId], { quiet: true });
   console.log(`✓ deleted security group ${g.GroupId}`);
 }
+forgetServer();
 console.log('All gone. Billing for these resources has stopped.');

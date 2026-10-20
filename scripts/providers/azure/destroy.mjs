@@ -4,11 +4,13 @@
 // Usage:  node scripts/destroy.mjs --provider azure [--yes]
 
 import { createInterface } from 'node:readline/promises';
+import { forgetServer } from '../../server.mjs';
 import { az, requireLogin, GROUP } from './az.mjs';
 
 requireLogin();
 
 if (!az(['group', 'exists', '-n', GROUP])) {
+  forgetServer();
   console.log('Nothing to delete.');
   process.exit(0);
 }
@@ -26,4 +28,5 @@ if (!process.argv.includes('--yes')) {
 
 console.log('Deleting (takes a few minutes)...');
 az(['group', 'delete', '-n', GROUP, '--yes'], { json: false });
+forgetServer();
 console.log('All gone. Billing for these resources has stopped.');
