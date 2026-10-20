@@ -212,7 +212,7 @@ async function castJson(m, me, readOnly) {
     ts: m.data.timestamp,
     parent: body.parentCastId ? { id: `${body.parentCastId.fid}/${body.parentCastId.hash}`, username: parentAuthor.username } : null,
     channel: body.parentUrl || null,
-    app: app ? { fid: app, username: appProfile.username } : null,
+    app: app ? { fid: app, username: appProfile.username, pfp: appProfile.pfp } : null,
     liked: Boolean(liked),
     recasted: Boolean(recasted),
     mine: !readOnly && m.data.fid === me,
@@ -224,7 +224,7 @@ function appCounts(casts) {
   for (const c of casts) counts.set(appOf(c), (counts.get(appOf(c)) || 0) + 1);
   return Promise.all(
     [...counts].filter(([app]) => app).sort((a, b) => b[1] - a[1])
-      .map(async ([app, n]) => ({ fid: app, username: (await profile(app)).username, casts: n }))
+      .map(async ([app, n]) => { const p = await profile(app); return { fid: app, username: p.username, pfp: p.pfp, casts: n }; })
   );
 }
 
@@ -232,6 +232,11 @@ const routes = {
   async 'GET /api/me'() {
     const s = session();
     return { ...(await profile(s.fid)), node: node().replace(/^https:\/\//, ''), readOnly: Boolean(s.readOnly), live: true };
+  },
+
+  async 'GET /api/node'() {
+    const info = await get('info', {});
+    return { host: node().replace(/^https:\/\//, ''), version: info.version, behind: Math.max(...info.shardInfos.map((s) => Number(s.blockDelay))) };
   },
 
   async 'GET /api/feed'(q) {
@@ -336,9 +341,17 @@ async function api(path, body) {
 
 // --- the first screen ----------------------------------------------------
 
-function loginView(start, h, toast) {
-  const status = h('p', { class: 'muted small' });
-  const connect = h('button', { class: 'btn', onclick: async () => {
+function loginView(start, { h, icon, logoMark, toast }) {
+  const status = h('div', { class: 'status' });
+  const dot = h('span', { class: 'dot' });
+  const nodeLabel = h('span', {}, node().replace(/^https:\/\//, ''));
+  routes['GET /api/node']().then((n) => {
+    dot.className = 'dot ' + (n.behind < 30 ? 'ok' : 'warn');
+    nodeLabel.textContent = `${n.behind < 30 ? 'Node in sync' : 'Node syncing'} · ${n.host}`;
+  }, () => { dot.className = 'dot warn'; nodeLabel.textContent = `Can't reach ${node().replace(/^https:\/\//, '')}`; });
+
+  const connect = h('button', { class: 'btn big' }, icon('wallet'), 'Connect wallet');
+  connect.addEventListener('click', async () => {
     connect.disabled = true;
     try {
       await connectWallet((msg) => (status.textContent = msg));
@@ -348,37 +361,46 @@ function loginView(start, h, toast) {
       toast(e.message || String(e), true);
       connect.disabled = false;
     }
-  } }, 'Connect wallet');
-  const look = h('form', { class: 'look', onsubmit: async (e) => {
-    e.preventDefault();
+  });
+
+  const browse = async (who) => {
     try {
-      store.set(VIEWER, await resolveFid(e.target.u.value.trim() || 'dwr'), sessionStorage);
+      store.set(VIEWER, await resolveFid(who), sessionStorage);
       start();
     } catch (err) { toast(err.message, true); }
-  } },
-    h('input', { name: 'u', placeholder: 'any username, e.g. dwr', autocapitalize: 'none', autocorrect: 'off' }),
-    h('button', { class: 'btn ghost' }, 'Look around'));
-  const nodeForm = h('form', { class: 'nodeform', onsubmit: (e) => {
+  };
+  const look = h('form', { class: 'inline', onsubmit: (e) => { e.preventDefault(); browse(e.target.u.value.trim() || 'dwr'); } },
+    h('input', { class: 'field', name: 'u', placeholder: 'Any username', autocapitalize: 'none', autocorrect: 'off', enterkeyhint: 'go' }),
+    h('button', { class: 'btn ghost' }, 'Read'));
+  const sugg = h('div', { class: 'sugg' }, ...['dwr', 'balajis.eth', 'v', 'sats100m'].map((u) =>
+    h('button', { class: 'chip', type: 'button', onclick: () => browse(u) }, '@' + u)));
+
+  const nodeForm = h('form', { class: 'inline', onsubmit: (e) => {
     e.preventDefault();
     const v = e.target.n.value.trim().replace(/\/$/, '');
     if (!/^https:\/\//.test(v)) return toast('The node must be https:// (run ./fc3 https on it).', true);
     store.set(NODE, v);
-    toast('Using ' + v);
+    location.reload();
   } },
-    h('input', { name: 'n', value: node(), autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false' }),
+    h('input', { class: 'field', name: 'n', value: node(), autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false' }),
     h('button', { class: 'btn ghost' }, 'Use'));
 
-  return h('div', { class: 'login' },
-    h('h1', {}, 'Try it live'),
-    h('p', { class: 'muted' }, 'A Farcaster client running in this page and reading straight from a Snapchain read node. No API keys, no backend: just the node below.'),
+  return h('div', { class: 'gate' }, h('div', { class: 'panel' },
+    logoMark(),
+    h('h1', {}, 'Farcaster, straight from a node'),
+    h('p', { class: 'lede' }, 'A full client running in this page. It reads from and posts to a Snapchain read node. No API keys, no backend, no company in between.'),
+    h('span', { class: 'nodepill' }, dot, nodeLabel),
     connect,
     status,
-    h('p', { class: 'muted small' }, 'Your wallet signs a key for this browser, with no gas and nothing onchain. The key stays in this browser. It can post, react and follow, but it can never move your account. Use a test account.'),
-    h('div', { class: 'or' }, 'or read without signing in'),
+    h('p', { class: 'fine' }, icon('shield'), h('span', {}, 'Your wallet signs a key for this browser. No gas, nothing onchain, and the key can never move your account. Use a test account.')),
+    h('div', { class: 'sep' }, 'or just read'),
     look,
-    h('details', {}, h('summary', {}, 'Node'), nodeForm,
-      h('p', { class: 'muted small' }, 'Run your own with farcaster-in-3, then ./fc3 https, and put its address here.')),
-    h('p', { class: 'muted small' }, h('a', { href: '../' }, '← Back to the tutorial')));
+    sugg,
+    h('details', {}, h('summary', {}, icon('server'), 'Use a different node'), nodeForm,
+      h('p', { class: 'fine' }, h('span', {}, 'Run your own with three commands, then ', h('code', {}, './fc3 https'), '.'))),
+    h('div', { class: 'foot' },
+      h('a', { href: '../' }, 'How it works'),
+      h('a', { href: 'https://github.com/Sats100M/farcaster-in-3' }, 'Source'))));
 }
 
 function signOut() {

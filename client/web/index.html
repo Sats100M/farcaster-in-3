@@ -3,118 +3,242 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0f" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>farcaster-in-3</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='7' fill='%237c5cff'/%3E%3Cpath d='M7 16.5 12 7.5l5 9Z' fill='none' stroke='white' stroke-width='1.6'/%3E%3Ccircle cx='12' cy='7' r='2.4' fill='white'/%3E%3Ccircle cx='6.6' cy='17' r='2.4' fill='white'/%3E%3Ccircle cx='17.4' cy='17' r='2.4' fill='white'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #fff; --card: #fff; --alt: #f5f5f7; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea;
-    --accent: #0071e3; --like: #e0245e; --recast: #1d8f3a; --bad: #c9252d;
+    --bg: #f6f6f8; --surface: #ffffff; --raised: #f2f2f6; --line: #e8e8ee; --line-strong: #d9d9e2;
+    --fg: #101016; --soft: #3a3a46; --muted: #6e6e7c; --faint: #a0a0ad;
+    --accent: #7c5cff; --accent-fg: #ffffff; --accent-weak: rgba(124, 92, 255, 0.1); --accent-text: #6747f5;
+    --like: #f0306e; --like-weak: rgba(240, 48, 110, 0.1); --recast: #12a86b; --recast-weak: rgba(18, 168, 107, 0.1);
+    --bad: #e5484d; --ok: #12a86b;
+    --shadow: 0 1px 2px rgba(16, 16, 22, 0.04), 0 8px 24px rgba(16, 16, 22, 0.06);
+    --radius: 18px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #000; --card: #000; --alt: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #2c2c2e; --accent: #2997ff; --like: #ff375f; --recast: #30d158; --bad: #ff453a; }
+    :root {
+      --bg: #0b0b0f; --surface: #121217; --raised: #1b1b22; --line: #23232c; --line-strong: #30303b;
+      --fg: #f3f3f6; --soft: #cfcfd8; --muted: #8e8e9c; --faint: #5d5d6a;
+      --accent: #8f74ff; --accent-weak: rgba(143, 116, 255, 0.16); --accent-text: #a995ff;
+      --like-weak: rgba(240, 48, 110, 0.16); --recast-weak: rgba(18, 168, 107, 0.16);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--bg); color: var(--fg); min-height: 100vh;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -0.006em;
   }
-  a { color: var(--accent); text-decoration: none; }
-  button, input, textarea, select { font: inherit; color: inherit; }
-  .wrap { max-width: 620px; margin: 0 auto; }
+  a { color: var(--accent-text); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
-  header {
-    position: sticky; top: 0; z-index: 5; padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
-    background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  /* ---------- shell ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px);
     border-bottom: 1px solid var(--line);
   }
-  header .wrap { display: flex; align-items: center; gap: 10px; }
-  .brand { font-weight: 700; letter-spacing: -0.02em; cursor: pointer; }
-  .node { font-size: 12px; color: var(--muted); margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .node::before { content: "●"; color: var(--recast); margin-right: 4px; }
-  .search { width: 130px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--alt); font-size: 14px; }
-  .me img { width: 30px; height: 30px; border-radius: 50%; display: block; object-fit: cover; background: var(--alt); }
-
-  .compose { padding: 14px 16px; border-bottom: 8px solid var(--alt); }
-  .compose textarea {
-    width: 100%; min-height: 72px; resize: vertical; border: 0; outline: 0; background: transparent; font-size: 17px;
+  .topbar .in { max-width: 640px; margin: 0 auto; height: 58px; padding: 0 14px; display: flex; align-items: center; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -0.02em; font-size: 16px; color: var(--fg); cursor: pointer; white-space: nowrap; }
+  .logo:hover { text-decoration: none; }
+  .mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, #9a7dff, #6a46ff); display: grid; place-items: center; box-shadow: 0 4px 12px rgba(124, 92, 255, 0.35); }
+  .mark svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; }
+  .spacer { flex: 1; }
+  .nodepill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap;
+    padding: 5px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); max-width: 210px; overflow: hidden; text-overflow: ellipsis;
   }
-  .compose .row { display: flex; align-items: center; gap: 10px; }
-  .replying { font-size: 14px; color: var(--muted); margin-bottom: 6px; display: none; }
-  .replying button { border: 0; background: none; color: var(--accent); padding: 0 4px; cursor: pointer; }
-  .count { margin-left: auto; font-size: 13px; color: var(--muted); }
-  .count.over { color: var(--bad); }
-  .btn { border: 0; border-radius: 999px; padding: 8px 18px; font-weight: 600; background: var(--accent); color: #fff; cursor: pointer; }
-  .btn:disabled { opacity: 0.45; cursor: default; }
-  .btn.ghost { background: var(--alt); color: var(--fg); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+  .dot.warn { background: #f5a524; }
+  .iconbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: transparent; color: var(--soft); display: grid; place-items: center; flex: none; }
+  .iconbtn:hover { background: var(--raised); }
+  .avatar-btn img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; display: block; background: var(--raised); border: 1px solid var(--line); }
+  .searchbar { display: none; position: absolute; inset: env(safe-area-inset-top) 0 auto 0; height: 58px; background: var(--bg); align-items: center; gap: 8px; padding: 0 14px; max-width: 640px; margin: 0 auto; }
+  .searchbar.open { display: flex; }
+  .field {
+    flex: 1; min-width: 0; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+    padding: 0 14px; outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .field:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-weak); }
 
-  .filters { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+  .column { max-width: 640px; margin: 0 auto; padding: 0 0 80px; }
+  @media (min-width: 680px) { .column { padding: 18px 14px 80px; } .card { border-radius: var(--radius); border: 1px solid var(--line); } }
+  .card { background: var(--surface); overflow: hidden; }
+  .card + .card { margin-top: 12px; }
+  @media (max-width: 679px) { .card + .card { margin-top: 8px; } }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 18px; border-radius: 999px; border: 0;
+    background: var(--accent); color: var(--accent-fg); font-weight: 600; white-space: nowrap; transition: transform .08s, filter .15s, opacity .15s;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: default; transform: none; filter: none; }
+  .btn.ghost { background: var(--raised); color: var(--fg); }
+  .btn.outline { background: transparent; color: var(--fg); border: 1px solid var(--line-strong); }
+  .btn.big { height: 50px; font-size: 16px; width: 100%; border-radius: 14px; }
+
+  /* ---------- composer ---------- */
+  .compose { display: grid; grid-template-columns: 42px 1fr; gap: 12px; padding: 16px; }
+  .compose .av { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--raised); }
+  .compose textarea { width: 100%; border: 0; outline: 0; resize: none; background: transparent; font-size: 17px; line-height: 1.45; min-height: 52px; padding: 9px 0 0; }
+  .compose textarea::placeholder { color: var(--faint); }
+  .compose .bar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 8px; }
+  .ring { width: 26px; height: 26px; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 3; }
+  .ring .track { stroke: var(--line); }
+  .ring .fill { stroke: var(--accent); transition: stroke-dashoffset .15s; }
+  .ring.warn .fill { stroke: #f5a524; } .ring.over .fill { stroke: var(--bad); }
+  .left { font-size: 13px; color: var(--muted); min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+  .left.over { color: var(--bad); }
+  .replying { display: none; grid-column: 1 / -1; font-size: 13px; color: var(--muted); background: var(--raised); border-radius: 10px; padding: 7px 10px; align-items: center; gap: 6px; }
+  .replying b { color: var(--accent-text); font-weight: 600; }
+  .replying button { margin-left: auto; border: 0; background: none; color: var(--muted); padding: 0 2px; display: grid; }
+
+  /* ---------- app filter ---------- */
+  .filters { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
   .filters::-webkit-scrollbar { display: none; }
   .chip {
-    flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 12px; font-size: 14px;
-    cursor: pointer; white-space: nowrap;
+    flex: none; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); font-size: 13.5px; font-weight: 500; color: var(--soft); white-space: nowrap; transition: background .15s, border-color .15s;
   }
-  .chip.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-  .chip.hide { text-decoration: line-through; color: var(--muted); }
-  .hint { font-size: 13px; color: var(--muted); padding: 8px 16px 0; }
+  .chip:hover { background: var(--raised); }
+  .chip.plain { padding: 0 14px; }
+  .chip img, .chip .ph { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; background: var(--raised); }
+  .chip .n { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.on .n { color: rgba(255, 255, 255, 0.75); }
+  .chip.hide { background: var(--raised); color: var(--muted); }
+  .chip.hide .label { text-decoration: line-through; }
+  .filterhint { font-size: 12.5px; color: var(--muted); padding: 10px 16px 0; display: flex; gap: 6px; align-items: center; }
+  .filterhint svg { width: 14px; height: 14px; }
 
-  .cast { display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  /* ---------- casts ---------- */
+  .cast { display: grid; grid-template-columns: 42px 1fr; gap: 12px; padding: 14px 16px 6px; border-bottom: 1px solid var(--line); transition: background .15s; }
+  .cast:last-child { border-bottom: 0; }
+  .cast:hover { background: color-mix(in srgb, var(--raised) 45%, transparent); }
   .cast > * { min-width: 0; }
-  .pfp { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--alt); cursor: pointer; }
-  .meta { font-size: 15px; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
-  .meta .name { font-weight: 600; cursor: pointer; }
-  .meta .user, .meta .time { color: var(--muted); }
-  .via { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; cursor: pointer; }
-  .context { font-size: 13px; color: var(--muted); }
-  .text { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
-  .text.clamp { max-height: 8.7em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
-  .more { border: 0; background: none; color: var(--accent); padding: 2px 0; cursor: pointer; font-size: 14px; }
-  .embeds img { max-width: 100%; max-height: 420px; border-radius: 12px; margin-top: 8px; display: block; border: 1px solid var(--line); }
-  .embeds a.link { display: block; font-size: 14px; margin-top: 6px; overflow-wrap: anywhere; }
-  .actions { display: flex; gap: 4px; margin: 6px 0 -6px -10px; }
-  .actions button { border: 0; background: none; color: var(--muted); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 14px; }
-  .actions button:hover { background: var(--alt); }
-  .actions .liked { color: var(--like); }
-  .actions .recasted { color: var(--recast); }
-  .actions .del { margin-left: auto; }
-
-  .profile { padding: 18px 16px; border-bottom: 8px solid var(--alt); display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; }
-  .profile img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--alt); }
-  .profile h2 { font-size: 20px; margin: 0; }
-  .profile .user { color: var(--muted); }
-  .apps { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
-
-  .empty, .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
-  .login { max-width: 400px; margin: 12vh auto 40px; padding: 0 16px; }
-  .login h1 { letter-spacing: -0.02em; }
-  .login input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--alt); margin: 8px 0 12px; }
-  .login .btn { width: 100%; padding: 12px; }
-  .muted { color: var(--muted); }
-  .small { font-size: 14px; }
-  .btn.small { padding: 6px 14px; font-size: 14px; }
-  .login .or { text-align: center; color: var(--muted); font-size: 13px; margin: 28px 0 10px; }
-  .login .look, .login .nodeform { display: flex; gap: 8px; }
-  .login .look input, .login .nodeform input { margin: 0; flex: 1; min-width: 0; }
-  .login .look .btn, .login .nodeform .btn { width: auto; }
-  .login details { margin-top: 22px; font-size: 14px; color: var(--muted); }
-  .login summary { cursor: pointer; margin-bottom: 8px; }
-  .hint.readonly { padding: 14px 16px; border-bottom: 8px solid var(--alt); }
-  .toast {
-    position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 10;
-    background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px);
-    opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  .pfp { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--raised); cursor: pointer; display: block; }
+  .ctx { font-size: 12.5px; color: var(--muted); margin-bottom: 1px; display: flex; align-items: center; gap: 4px; }
+  .ctx svg { width: 13px; height: 13px; }
+  .head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .head .name { font-weight: 650; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+  .head .name:hover { text-decoration: underline; }
+  .head .user, .head .time { color: var(--muted); white-space: nowrap; }
+  .head .user { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+  .via {
+    margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px 2px 3px; cursor: pointer; background: var(--surface);
   }
-  .toast.show { opacity: 1; }
+  .via img, .via .ph { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; background: var(--raised); }
+  .via:hover { border-color: var(--accent); color: var(--accent-text); }
+  .text { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; color: var(--fg); font-size: 15.5px; line-height: 1.5; }
+  .text.clamp { max-height: 9.3em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+  .more { border: 0; background: none; color: var(--accent-text); padding: 2px 0; font-size: 14px; font-weight: 500; }
+  .embeds { display: grid; gap: 8px; margin-top: 10px; }
+  .embeds img { width: 100%; max-height: 460px; object-fit: cover; border-radius: 14px; display: block; border: 1px solid var(--line); background: var(--raised); }
+  .linkcard {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--soft);
+    font-size: 13.5px; min-width: 0;
+  }
+  .linkcard:hover { text-decoration: none; background: var(--raised); }
+  .linkcard .host { font-weight: 600; color: var(--fg); }
+  .linkcard .path { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .linkcard svg { color: var(--muted); }
+  .quote { font-size: 13px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 12px; padding: 8px 12px; display: flex; gap: 6px; align-items: center; }
+  .actions { display: flex; align-items: center; gap: 2px; margin: 4px 0 0 -9px; }
+  .act {
+    height: 34px; min-width: 34px; padding: 0 9px; border: 0; border-radius: 999px; background: none; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; transition: background .15s, color .15s;
+  }
+  .act:hover { background: var(--accent-weak); color: var(--accent-text); }
+  .act.like:hover, .act.like.on { color: var(--like); } .act.like:hover { background: var(--like-weak); }
+  .act.recast:hover, .act.recast.on { color: var(--recast); } .act.recast:hover { background: var(--recast-weak); }
+  .act.like.on svg { fill: var(--like); }
+  .act.del { margin-left: auto; }
+  .act.del:hover { background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad); }
+  .act.del.sure { color: var(--bad); }
+  .act.pop svg { animation: pop .35s ease; }
+  @keyframes pop { 40% { transform: scale(1.35); } }
+
+  /* ---------- profile ---------- */
+  .banner { height: 108px; background: linear-gradient(120deg, #a48bff 0%, #7c5cff 45%, #e06cf0 100%); }
+  .phead { padding: 0 16px 16px; }
+  .phead .row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: -40px; }
+  .phead img.big { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid var(--surface); background: var(--raised); }
+  .phead h2 { margin: 10px 0 0; font-size: 22px; letter-spacing: -0.02em; line-height: 1.2; }
+  .phead .sub { color: var(--muted); font-size: 14px; }
+  .phead .apps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; font-size: 13px; color: var(--muted); }
+  .phead .apps .chip { height: 28px; font-size: 12.5px; cursor: default; }
+  .phead .apps .chip:hover { background: var(--surface); }
+  .linkbtn { border: 0; background: none; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; margin-top: 12px; }
+  .linkbtn.sure { color: var(--bad); }
+  .tabtitle { padding: 12px 16px; font-weight: 650; border-bottom: 1px solid var(--line); font-size: 14px; }
+
+  /* ---------- states ---------- */
+  .skel { display: grid; grid-template-columns: 42px 1fr; gap: 12px; padding: 16px; border-bottom: 1px solid var(--line); }
+  .skel i { display: block; background: var(--raised); border-radius: 8px; position: relative; overflow: hidden; }
+  .skel i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 70%, transparent), transparent); animation: shimmer 1.3s infinite; transform: translateX(-100%); }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+  .skel .a { width: 42px; height: 42px; border-radius: 50%; }
+  .skel .l1 { height: 12px; width: 40%; margin: 4px 0 10px; } .skel .l2 { height: 12px; width: 92%; margin-bottom: 8px; } .skel .l3 { height: 12px; width: 70%; }
+  .empty { padding: 56px 24px; text-align: center; color: var(--muted); }
+  .empty svg { width: 34px; height: 34px; color: var(--faint); margin-bottom: 10px; }
+  .empty b { display: block; color: var(--fg); font-size: 16px; margin-bottom: 4px; }
+  .banner-note { display: flex; gap: 12px; align-items: center; padding: 14px 16px; font-size: 14px; color: var(--soft); }
+  .banner-note .btn { margin-left: auto; height: 34px; padding: 0 14px; font-size: 13.5px; }
+
+  /* ---------- sign in ---------- */
+  .gate { min-height: 100vh; display: grid; place-items: center; padding: 28px 16px calc(28px + env(safe-area-inset-bottom)); position: relative; overflow: hidden; }
+  .gate::before {
+    content: ""; position: absolute; inset: -40% -20% auto; height: 80vh; z-index: 0;
+    background: radial-gradient(closest-side, rgba(124, 92, 255, 0.22), transparent), radial-gradient(closest-side at 70% 60%, rgba(224, 108, 240, 0.14), transparent);
+    filter: blur(10px);
+  }
+  .gate .panel { position: relative; z-index: 1; width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 28px 24px 22px; }
+  .gate .mark { width: 46px; height: 46px; border-radius: 14px; }
+  .gate .mark svg { width: 26px; height: 26px; }
+  .gate h1 { font-size: 28px; letter-spacing: -0.03em; margin: 18px 0 6px; line-height: 1.15; }
+  .gate .lede { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
+  .gate .nodepill { margin-bottom: 18px; max-width: 100%; }
+  .gate .fine { font-size: 13px; color: var(--muted); margin: 12px 0 0; display: flex; gap: 8px; align-items: flex-start; }
+  .gate .fine svg { width: 16px; height: 16px; margin-top: 2px; color: var(--ok); }
+  .gate .sep { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12px; margin: 22px 0 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .gate .sep::before, .gate .sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .gate form.inline { display: flex; gap: 8px; }
+  .gate .sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .gate .sugg .chip { height: 30px; font-size: 13px; padding: 0 12px; }
+  .gate details { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  .gate summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+  .gate summary::-webkit-details-marker { display: none; }
+  .gate details form { margin-top: 10px; }
+  .gate .foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 13px; }
+  .gate .status { font-size: 13px; color: var(--accent-text); margin-top: 10px; min-height: 1px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translate(-50%, 12px); z-index: 50;
+    background: var(--fg); color: var(--bg); padding: 11px 16px; border-radius: 14px; font-size: 14px; max-width: calc(100% - 32px);
+    opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; box-shadow: var(--shadow); font-weight: 500;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .toast.bad { background: var(--bad); color: #fff; }
-  @media (max-width: 420px) { .search { width: 100px; } .node { display: none; } .brand { margin-right: auto; } }
+
+  @media (max-width: 460px) { .nodepill.top { display: none; } }
 </style>
 </head>
 <body>
 <div id="app"></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 'use strict';
 const $app = document.getElementById('app');
@@ -137,13 +261,47 @@ function h(tag, attrs = {}, ...children) {
   return el;
 }
 
+// Small line icons, drawn inline so the page needs nothing else.
+const ICONS = {
+  reply: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z"/>',
+  recast: '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  like: '<path d="M12 20s-7.5-4.4-9.3-9A5.2 5.2 0 0 1 12 6.3 5.2 5.2 0 0 1 21.3 11c-1.8 4.6-9.3 9-9.3 9Z"/>',
+  trash: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  back: '<path d="M15 18l-6-6 6-6"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  link: '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+  replyTo: '<path d="M9 14 4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  filter: '<path d="M3 5h18l-7 8v6l-4 2v-8Z"/>',
+  quote: '<path d="M7 7h4v4H7zM13 7h4v4h-4z"/><path d="M7 11c0 3-1 5-3 6M13 11c0 3-1 5-3 6"/>',
+  wallet: '<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2Z"/><circle cx="16" cy="14.5" r="1.2"/>',
+  shield: '<path d="M12 3 5 6v6c0 4.4 3 7.8 7 9 4-1.2 7-4.6 7-9V6Z"/><path d="m9 12 2 2 4-4"/>',
+  inbox: '<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6Z"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5 3.5-5 3.5Z"/>',
+  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+};
+function icon(name, cls = 'i') {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('class', cls);
+  s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = ICONS[name];
+  return s;
+}
+const logoMark = () => {
+  const m = h('span', { class: 'mark' });
+  // Three nodes, connected: a server, a node, a client.
+  m.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 16.5 12 7.5l5 9Z" stroke-width="2"/><circle cx="12" cy="7" r="2.6" fill="#fff" stroke="none"/><circle cx="6.6" cy="17" r="2.6" fill="#fff" stroke="none"/><circle cx="17.4" cy="17" r="2.6" fill="#fff" stroke="none"/></svg>';
+  return m;
+};
+
 let toastTimer;
 function toast(msg, bad = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (bad ? ' bad' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.className = 'toast'), bad ? 5000 : 2200);
+  toastTimer = setTimeout(() => (t.className = 'toast'), bad ? 5000 : 2400);
 }
 
 // On the tutorial site (live/live.mjs) there's no server: window.FC_LIVE answers
@@ -172,11 +330,11 @@ async function api(path, body) {
 const FC_EPOCH = Date.UTC(2021, 0, 1);
 function ago(ts) {
   const s = (Date.now() - (FC_EPOCH + ts * 1000)) / 1000;
-  if (s < 0) return 'now';
-  if (s < 60) return Math.floor(s) + 's';
+  if (s < 60) return 'now';
   if (s < 3600) return Math.floor(s / 60) + 'm';
   if (s < 86400) return Math.floor(s / 3600) + 'h';
-  return Math.floor(s / 86400) + 'd';
+  if (s < 7 * 86400) return Math.floor(s / 86400) + 'd';
+  return new Date(FC_EPOCH + ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // Links and @mentions become tappable; everything else stays plain text.
@@ -186,7 +344,8 @@ function richText(text) {
   let last = 0, m;
   while ((m = re.exec(text))) {
     if (m[1]) {
-      out.push(text.slice(last, m.index), h('a', { href: m[1], target: '_blank', rel: 'noopener noreferrer' }, m[1]));
+      const short = m[1].replace(/^https?:\/\/(www\.)?/, '');
+      out.push(text.slice(last, m.index), h('a', { href: m[1], target: '_blank', rel: 'noopener noreferrer' }, short.length > 42 ? short.slice(0, 40) + '…' : short));
     } else {
       out.push(text.slice(last, m.index) + m[2], h('a', { href: '#/u/' + m[3] }, '@' + m[3]));
     }
@@ -196,70 +355,127 @@ function richText(text) {
   return out;
 }
 
-const isImage = (url) => /\.(png|jpe?g|gif|webp)(\?|$)/i.test(url) || /imagedelivery\.net|i\.imgur\.com/.test(url);
+const isImage = (url) => /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(url) || /imagedelivery\.net|i\.imgur\.com/.test(url);
 const bytes = (s) => new TextEncoder().encode(s).length;
-const pfp = (p, cls = 'pfp') => h('img', { class: cls, src: p.pfp || 'data:,', alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onclick: () => go('#/u/' + p.username) });
+const img = (src, cls) => (src ? h('img', { class: cls, src, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: cls + ' ph' }));
+const pfp = (p) => {
+  const el = img(p.pfp, 'pfp');
+  el.addEventListener('click', () => go('#/u/' + p.username));
+  return el;
+};
+
+function skeletons(n = 5) {
+  return Array.from({ length: n }, () => h('div', { class: 'skel' }, h('i', { class: 'a' }), h('div', {}, h('i', { class: 'l1' }), h('i', { class: 'l2' }), h('i', { class: 'l3' }))));
+}
+function empty(iconName, title, text) {
+  return h('div', { class: 'empty' }, icon(iconName), h('b', {}, title), text);
+}
+
+// --- node status -----------------------------------------------------------
+
+async function nodePill(cls = 'nodepill') {
+  const label = h('span', {}, me?.node || 'node');
+  const dot = h('span', { class: 'dot' });
+  const pill = h('span', { class: cls, title: 'Every read and write goes through this Snapchain node' }, dot, label);
+  api('/api/node').then((n) => {
+    dot.className = 'dot ' + (n.behind < 30 ? 'ok' : 'warn');
+    label.textContent = (n.behind < 30 ? 'In sync' : 'Syncing') + ' · ' + n.host;
+  }, () => {});
+  return pill;
+}
 
 // --- views ---------------------------------------------------------------
 
 function showLogin() {
-  if (LIVE) return $app.replaceChildren(LIVE.loginView(start, h, toast));
-  $app.replaceChildren(h('form', { class: 'login', onsubmit: async (e) => {
+  if (LIVE) return $app.replaceChildren(LIVE.loginView(start, { h, icon, logoMark, toast }));
+  $app.replaceChildren(h('div', { class: 'gate' }, h('form', { class: 'panel', onsubmit: async (e) => {
     e.preventDefault();
     try {
       await api('/api/login', { password: e.target.password.value });
       start();
     } catch (err) { toast(err.message, true); }
   } },
-    h('h1', {}, 'farcaster-in-3'),
-    h('p', { style: 'color:var(--muted)' }, 'Enter the password printed by fc serve.'),
-    h('input', { name: 'password', type: 'password', autocomplete: 'current-password', autofocus: true, placeholder: 'Password' }),
-    h('button', { class: 'btn' }, 'Log in')));
+    logoMark(),
+    h('h1', {}, 'Your own Farcaster'),
+    h('p', { class: 'lede' }, 'Enter the password that fc serve printed in your terminal.'),
+    h('input', { class: 'field', name: 'password', type: 'password', autocomplete: 'current-password', autofocus: true, placeholder: 'Password', style: 'width:100%;height:48px;margin-bottom:12px' }),
+    h('button', { class: 'btn big' }, 'Log in'))));
 }
 
-function header() {
-  return h('header', {}, h('div', { class: 'wrap' },
-    h('span', { class: 'brand', onclick: () => go('#/') }, 'farcaster-in-3'),
-    h('span', { class: 'node', title: 'All reads and writes go through this node' }, me.node),
-    h('form', { onsubmit: (e) => { e.preventDefault(); const u = e.target.u.value.trim().replace(/^@/, ''); if (u) go('#/u/' + u); } },
-      h('input', { class: 'search', name: 'u', placeholder: 'Go to @user', autocapitalize: 'none', autocorrect: 'off' })),
+function header({ back = false } = {}) {
+  const search = h('form', { class: 'searchbar', onsubmit: (e) => {
+    e.preventDefault();
+    const u = e.target.u.value.trim().replace(/^@/, '');
+    if (u) go('#/u/' + u);
+  } },
+    h('input', { class: 'field', name: 'u', placeholder: 'Find someone by username or FID', autocapitalize: 'none', autocorrect: 'off', enterkeyhint: 'go' }),
+    h('button', { type: 'button', class: 'iconbtn', 'aria-label': 'Close search', onclick: () => search.classList.remove('open') }, icon('x')));
+  const bar = h('div', { class: 'topbar' }, h('div', { class: 'in' },
+    back
+      ? h('button', { class: 'iconbtn', 'aria-label': 'Back', onclick: () => (history.length > 1 ? history.back() : go('#/')) }, icon('back'))
+      : null,
+    h('a', { class: 'logo', onclick: () => go('#/') }, logoMark(), back ? null : h('span', {}, 'farcaster-in-3')),
+    h('span', { class: 'spacer' }),
+    h('span', { class: 'top-slot' }),
+    h('button', { class: 'iconbtn', 'aria-label': 'Search', onclick: () => { search.classList.add('open'); search.u.focus(); } }, icon('search')),
     me.readOnly
-      ? h('button', { class: 'btn small', onclick: () => { LIVE.signOut(); showLogin(); } }, 'Connect')
-      : h('a', { class: 'me', href: '#/u/' + me.username, title: '@' + me.username }, h('img', { src: me.pfp || 'data:,', alt: '' }))));
+      ? h('button', { class: 'btn', style: 'height:34px;padding:0 14px', onclick: () => { LIVE.signOut(); showLogin(); } }, 'Sign in')
+      : h('a', { class: 'avatar-btn', href: '#/u/' + me.username, title: '@' + me.username }, img(me.pfp, ''))),
+    search);
+  nodePill('nodepill top').then((p) => bar.querySelector('.top-slot').replaceWith(p));
+  return bar;
 }
 
 // On someone else's profile the composer stays hidden until you tap Reply.
 function composer(onPosted, { hiddenUntilReply = false } = {}) {
-  const ta = h('textarea', { placeholder: "What's happening?", maxlength: 1000 });
-  const count = h('span', { class: 'count' }, String(MAX));
+  const ta = h('textarea', { placeholder: "What's happening?", maxlength: 1000, rows: 2 });
+  const left = h('span', { class: 'left' });
+  const R = 10, C = 2 * Math.PI * R;
+  const ring = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  ring.setAttribute('viewBox', '0 0 26 26');
+  ring.setAttribute('class', 'ring');
+  ring.innerHTML = `<circle class="track" cx="13" cy="13" r="${R}"/><circle class="fill" cx="13" cy="13" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/>`;
   const send = h('button', { class: 'btn', disabled: true }, 'Cast');
   const replying = h('div', { class: 'replying' });
   const update = () => {
-    const left = MAX - bytes(ta.value);
-    count.textContent = left;
-    count.className = 'count' + (left < 0 ? ' over' : '');
-    send.disabled = !ta.value.trim() || left < 0;
+    const used = bytes(ta.value), rest = MAX - used;
+    ring.querySelector('.fill').setAttribute('stroke-dashoffset', String(C * (1 - Math.min(used / MAX, 1))));
+    ring.setAttribute('class', 'ring' + (rest < 0 ? ' over' : rest < 30 ? ' warn' : ''));
+    left.textContent = rest < 30 ? rest : '';
+    left.className = 'left' + (rest < 0 ? ' over' : '');
+    send.disabled = !ta.value.trim() || rest < 0;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
   };
   ta.addEventListener('input', update);
   const setReply = (cast) => {
     replyTo = cast;
-    replying.style.display = cast ? 'block' : 'none';
+    replying.style.display = cast ? 'flex' : 'none';
     if (hiddenUntilReply) el.style.display = cast ? '' : 'none';
-    replying.replaceChildren(...(cast ? ['Replying to @' + cast.author.username, h('button', { onclick: () => setReply(null) }, '✕')] : []));
-    if (cast) { ta.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    ta.placeholder = cast ? 'Write your reply' : "What's happening?";
+    send.textContent = cast ? 'Reply' : 'Cast';
+    replying.replaceChildren(...(cast ? [icon('replyTo'), 'Replying to ', h('b', {}, '@' + cast.author.username),
+      h('button', { 'aria-label': 'Cancel reply', onclick: () => setReply(null) }, icon('x'))] : []));
+    if (cast) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => ta.focus(), 250); }
   };
   send.addEventListener('click', async () => {
     send.disabled = true;
+    const text = send.textContent;
+    send.textContent = 'Sending…';
     try {
       await api('/api/cast', { text: ta.value, reply: replyTo?.id });
       ta.value = '';
       setReply(null);
-      toast('Cast sent through your node');
+      toast('Sent through your node');
       onPosted?.();
     } catch (err) { toast(err.message, true); }
+    send.textContent = text;
     update();
   });
-  const el = h('div', { class: 'compose' }, replying, ta, h('div', { class: 'row' }, count, send));
+  const el = h('div', { class: 'card' }, h('div', { class: 'compose' },
+    replying,
+    img(me.pfp, 'av'),
+    h('div', {}, ta, h('div', { class: 'bar' }, left, ring, send))));
   if (hiddenUntilReply) el.style.display = 'none';
   return { el, setReply };
 }
@@ -273,124 +489,152 @@ function longText(text) {
   return h('div', {}, el, more);
 }
 
-function castView(c, { onReply, onChange }) {
-  const like = h('button', { class: c.liked ? 'liked' : '' }, c.liked ? '♥ Liked' : '♡ Like');
-  const recast = h('button', { class: c.recasted ? 'recasted' : '' }, c.recasted ? '↻ Recasted' : '↻ Recast');
-  const toggle = (kind, btn) => async () => {
-    const on = !c[kind === 'like' ? 'liked' : 'recasted'];
-    btn.disabled = true;
-    try {
-      await api('/api/react', { id: c.id, kind, on });
-      c[kind === 'like' ? 'liked' : 'recasted'] = on;
-      if (kind === 'like') { like.className = on ? 'liked' : ''; like.textContent = on ? '♥ Liked' : '♡ Like'; }
-      else { recast.className = on ? 'recasted' : ''; recast.textContent = on ? '↻ Recasted' : '↻ Recast'; }
-    } catch (err) { toast(err.message, true); }
-    btn.disabled = false;
-  };
-  like.addEventListener('click', toggle('like', like));
-  recast.addEventListener('click', toggle('recast', recast));
+function embedView(e) {
+  if (e.cast) return h('div', { class: 'quote' }, icon('quote'), 'Quotes a cast');
+  if (isImage(e.url)) return h('a', { href: e.url, target: '_blank', rel: 'noopener noreferrer' }, img(e.url, ''));
+  let u;
+  try { u = new URL(e.url); } catch { return null; }
+  if (/\.m3u8(\?|$)|\/video\//.test(e.url)) {
+    return h('a', { class: 'linkcard', href: e.url, target: '_blank', rel: 'noopener noreferrer' }, icon('play'), h('span', { class: 'host' }, 'Video'), h('span', { class: 'path' }, u.hostname));
+  }
+  return h('a', { class: 'linkcard', href: e.url, target: '_blank', rel: 'noopener noreferrer' },
+    icon('link'), h('span', { class: 'host' }, u.hostname.replace(/^www\./, '')), h('span', { class: 'path' }, (u.pathname + u.search).replace(/^\/$/, '')));
+}
 
-  const via = c.app && h('span', { class: 'via', title: 'The app that signed this cast. Tap to filter.', onclick: () => {
+function castView(c, { onReply, onChange }) {
+  const btn = (kind, label) => {
+    const key = kind === 'like' ? 'liked' : 'recasted';
+    const b = h('button', { class: 'act ' + kind + (c[key] ? ' on' : ''), 'aria-label': label, 'aria-pressed': String(c[key]) }, icon(kind));
+    b.addEventListener('click', async () => {
+      const on = !c[key];
+      c[key] = on;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+      if (on) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+      try {
+        await api('/api/react', { id: c.id, kind, on });
+        if (kind === 'recast' && on) toast('Recast');
+      } catch (err) {
+        c[key] = !on;
+        b.classList.toggle('on', !on);
+        toast(err.message, true);
+      }
+    });
+    return b;
+  };
+
+  const via = c.app && h('button', { class: 'via', title: 'Signed by an app key belonging to @' + c.app.username + '. Tap to filter.', onclick: () => {
     filter = filter.only === c.app.fid ? { only: 0, hide: c.app.fid } : filter.hide === c.app.fid ? { only: 0, hide: 0 } : { only: c.app.fid, hide: 0 };
     go('#/');
     toast(filter.only ? 'Only casts from @' + c.app.username : filter.hide ? 'Hiding casts from @' + c.app.username : 'Showing all apps');
-  } }, 'via @' + c.app.username);
+  } }, img(c.app.pfp, ''), c.app.username);
+
+  const del = c.mine && h('button', { class: 'act del', 'aria-label': 'Delete' }, icon('trash'));
+  del && del.addEventListener('click', async () => {
+    if (!del.classList.contains('sure')) { del.classList.add('sure'); del.append(' Delete?'); return; }
+    try { await api('/api/delete', { id: c.id }); toast('Deleted'); onChange?.(); } catch (err) { toast(err.message, true); }
+  });
 
   return h('article', { class: 'cast' },
     pfp(c.author),
     h('div', {},
-      h('div', { class: 'meta' },
+      c.parent && h('div', { class: 'ctx' }, icon('replyTo'), 'Replying to ', h('a', { href: '#/u/' + c.parent.username }, '@' + c.parent.username)),
+      h('div', { class: 'head' },
         h('span', { class: 'name', onclick: () => go('#/u/' + c.author.username) }, c.author.displayName || c.author.username),
         h('span', { class: 'user' }, '@' + c.author.username),
         h('span', { class: 'time' }, '· ' + ago(c.ts)),
         via),
-      c.parent && h('div', { class: 'context' }, '↳ replying to ', h('a', { href: '#/u/' + c.parent.username }, '@' + c.parent.username)),
       c.text && longText(c.text),
-      c.embeds.length > 0 && h('div', { class: 'embeds' }, c.embeds.map((e) =>
-        e.url ? (isImage(e.url) ? h('img', { src: e.url, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('a', { class: 'link', href: e.url, target: '_blank', rel: 'noopener noreferrer' }, e.url))
-          : h('div', { class: 'context' }, 'quotes cast ' + e.cast.slice(0, 18) + '…'))),
-      !me.readOnly && h('div', { class: 'actions' },
-        h('button', { onclick: () => onReply(c) }, '↩ Reply'),
-        recast, like,
-        c.mine && h('button', { class: 'del', onclick: async (e) => {
-          if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Tap to confirm'; return; }
-          try { await api('/api/delete', { id: c.id }); toast('Deleted'); onChange?.(); } catch (err) { toast(err.message, true); }
-        } }, 'Delete'))));
+      c.embeds.length > 0 && h('div', { class: 'embeds' }, c.embeds.map(embedView)),
+      me.readOnly
+        ? h('div', { style: 'height:8px' })
+        : h('div', { class: 'actions' },
+          h('button', { class: 'act', 'aria-label': 'Reply', onclick: () => onReply(c) }, icon('reply')),
+          btn('recast', 'Recast'), btn('like', 'Like'), del)));
 }
 
 function appChips(apps, onPick) {
-  const chips = [h('button', { class: 'chip' + (!filter.only && !filter.hide ? ' on' : ''), onclick: () => onPick({ only: 0, hide: 0 }) }, 'All apps')];
+  const chips = [h('button', { class: 'chip plain' + (!filter.only && !filter.hide ? ' on' : ''), onclick: () => onPick({ only: 0, hide: 0 }) }, 'All apps')];
   for (const a of apps) {
     const on = filter.only === a.fid, hidden = filter.hide === a.fid;
     chips.push(h('button', {
       class: 'chip' + (on ? ' on' : '') + (hidden ? ' hide' : ''),
-      title: 'Tap: only this app. Tap again: hide it. Again: show all.',
+      title: 'Tap: only this app. Again: hide it. Again: all apps.',
       onclick: () => onPick(on ? { only: 0, hide: a.fid } : hidden ? { only: 0, hide: 0 } : { only: a.fid, hide: 0 }),
-    }, '@' + a.username + ' ' + a.casts));
+    }, img(a.pfp, ''), h('span', { class: 'label' }, a.username), h('span', { class: 'n' }, String(a.casts))));
   }
   return h('div', { class: 'filters' }, chips);
 }
 
 async function feedView() {
-  const list = h('div', {}, h('div', { class: 'loading' }, 'Reading your feed from your node…'));
+  const list = h('div', {}, skeletons());
   const comp = composer(() => setTimeout(load, 1500));
   const chipsSlot = h('div');
-  $app.replaceChildren(header(), h('main', { class: 'wrap' },
-    me.readOnly ? h('div', { class: 'hint readonly' }, 'Reading @' + me.username + "'s feed straight from the node. Connect a wallet to post.") : comp.el,
-    chipsSlot, list));
+  const hint = h('div', { class: 'filterhint' });
+  const top = me.readOnly
+    ? h('div', { class: 'card' }, h('div', { class: 'banner-note' }, h('span', {}, 'Reading ', h('b', {}, '@' + me.username), "'s feed straight from the node."),
+        h('button', { class: 'btn', onclick: () => { LIVE.signOut(); showLogin(); } }, 'Sign in to post')))
+    : comp.el;
+  $app.replaceChildren(header(), h('main', { class: 'column' }, top, h('div', { class: 'card' }, chipsSlot, hint, list)));
 
   async function load() {
     try {
       const q = new URLSearchParams({ only: filter.only, hide: filter.hide });
       const data = await api('/api/feed?' + q);
-      chipsSlot.replaceChildren(
-        appChips(data.apps, (f) => { filter = f; load(); }),
-        h('div', { class: 'hint' }, filter.only || filter.hide
-          ? 'Filtered by the app that signed each cast.'
-          : 'Every cast is signed by an app key. Tap an app to see only its casts, again to hide them.'));
+      chipsSlot.replaceChildren(appChips(data.apps, (f) => { filter = f; list.replaceChildren(...skeletons(3)); load(); }));
+      hint.replaceChildren(icon('filter'), filter.only || filter.hide
+        ? 'Filtered by the app that signed each cast'
+        : 'Each cast is signed by an app key. Tap an app to show only it, again to hide it.');
+      hint.style.paddingBottom = '6px';
       list.replaceChildren(...(data.casts.length
         ? data.casts.map((c) => castView(c, { onReply: comp.setReply, onChange: load }))
-        : [h('div', { class: 'empty' }, data.following ? 'No casts left after the app filter.' : "You don't follow anyone yet. Search for someone above and follow them.")]));
+        : [data.following
+          ? empty('filter', 'Nothing here', 'No recent casts left after the app filter.')
+          : empty('inbox', 'Your feed is empty', 'Follow someone to see their casts. Search for a username at the top.')]));
     } catch (err) {
-      list.replaceChildren(h('div', { class: 'empty' }, err.message));
+      list.replaceChildren(empty('server', "Couldn't reach the node", err.message));
     }
   }
   await load();
 }
 
 async function userView(name) {
-  const list = h('div', {}, h('div', { class: 'loading' }, 'Loading @' + name + '…'));
-  let comp;
-  $app.replaceChildren(header(), h('main', { class: 'wrap' }, list));
+  const body = h('div', { class: 'card' }, h('div', { class: 'banner' }), ...skeletons(3));
+  $app.replaceChildren(header({ back: true }), h('main', { class: 'column' }, body));
   try {
     const u = await api('/api/user?u=' + encodeURIComponent(name));
-    const followBtn = !u.self && !me.readOnly && h('button', { class: 'btn' + (u.following ? ' ghost' : '') }, u.following ? 'Following' : 'Follow');
+    const followBtn = !u.self && !me.readOnly && h('button', { class: 'btn' + (u.following ? ' outline' : '') }, u.following ? 'Following' : 'Follow');
     followBtn && followBtn.addEventListener('click', async () => {
       followBtn.disabled = true;
       try {
         await api('/api/follow', { fid: u.fid, on: !u.following });
         u.following = !u.following;
         followBtn.textContent = u.following ? 'Following' : 'Follow';
-        followBtn.className = 'btn' + (u.following ? ' ghost' : '');
+        followBtn.className = 'btn' + (u.following ? ' outline' : '');
         toast(u.following ? 'Following @' + u.username : 'Unfollowed @' + u.username);
       } catch (err) { toast(err.message, true); }
       followBtn.disabled = false;
     });
-    comp = composer(() => setTimeout(() => userView(name), 1500), { hiddenUntilReply: !u.self });
-    list.replaceChildren(
-      h('section', { class: 'profile' },
-        h('img', { src: u.pfp || 'data:,', alt: '' }),
-        h('div', {}, h('h2', {}, u.displayName || u.username), h('div', { class: 'user' }, '@' + u.username + ' · FID ' + u.fid)),
-        followBtn || h('span'),
-        u.apps.length > 0 && h('div', { class: 'apps' }, 'Posts from: ' + u.apps.map((a) => '@' + a.username + ' (' + a.casts + ')').join(', ')),
-        LIVE && u.self && h('div', { class: 'apps' }, h('button', { class: 'more', onclick: async (e) => {
-          if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Your wallet will sign the removal. Tap again'; return; }
-          try { await api('/api/revoke', {}); toast('Key removed from your account'); showLogin(); } catch (err) { toast(err.message, true); }
-        } }, "Remove this browser's key"))),
-      comp.el,
-      ...(u.casts.length ? u.casts.map((c) => castView(c, { onReply: comp.setReply, onChange: () => userView(name) })) : [h('div', { class: 'empty' }, 'No casts yet.')]));
+    const revoke = LIVE && u.self && h('button', { class: 'linkbtn' }, "Remove this browser's key");
+    revoke && revoke.addEventListener('click', async () => {
+      if (!revoke.classList.contains('sure')) { revoke.classList.add('sure'); revoke.textContent = 'Your wallet will sign the removal. Tap again to confirm'; return; }
+      try { await api('/api/revoke', {}); toast('Key removed from your account'); showLogin(); } catch (err) { toast(err.message, true); }
+    });
+    const comp = composer(() => setTimeout(() => userView(name), 1500), { hiddenUntilReply: !u.self });
+    body.replaceChildren(
+      h('div', { class: 'banner' }),
+      h('div', { class: 'phead' },
+        h('div', { class: 'row' }, img(u.pfp, 'big'), followBtn || h('span')),
+        h('h2', {}, u.displayName || u.username),
+        h('div', { class: 'sub' }, '@' + u.username + ' · FID ' + u.fid),
+        u.apps.length > 0 && h('div', { class: 'apps' }, 'Posts from', ...u.apps.map((a) =>
+          h('span', { class: 'chip' }, img(a.pfp, ''), h('span', {}, a.username), h('span', { class: 'n' }, String(a.casts))))),
+        revoke));
+    const casts = h('div', { class: 'card' }, h('div', { class: 'tabtitle' }, 'Casts'),
+      ...(u.casts.length ? u.casts.map((c) => castView(c, { onReply: comp.setReply, onChange: () => userView(name) })) : [empty('inbox', 'No casts yet', '')]));
+    body.after(comp.el, casts);
   } catch (err) {
-    list.replaceChildren(h('div', { class: 'empty' }, err.message));
+    body.replaceChildren(empty('search', 'Not found', err.message));
   }
 }
 
@@ -398,6 +642,7 @@ async function userView(name) {
 
 function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
 function route() {
+  window.scrollTo(0, 0);
   const m = /^#\/u\/(.+)$/.exec(location.hash);
   if (m) return userView(decodeURIComponent(m[1]));
   return feedView();

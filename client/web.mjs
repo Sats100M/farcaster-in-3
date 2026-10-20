@@ -56,7 +56,7 @@ export async function serve({ node, port = 3000, host = '127.0.0.1', password, o
       ts: c.data.timestamp,
       parent: body.parentCastId ? { id: idOf(body.parentCastId.fid, body.parentCastId.hash), username: parentAuthor.username } : null,
       channel: body.parentUrl || null,
-      app: app ? { fid: app, username: appProfile.username } : null,
+      app: app ? { fid: app, username: appProfile.username, pfp: appProfile.pfp } : null,
       liked,
       recasted,
       mine: c.data.fid === me,
@@ -68,12 +68,17 @@ export async function serve({ node, port = 3000, host = '127.0.0.1', password, o
     for (const c of casts) counts.set(appOf(c), (counts.get(appOf(c)) || 0) + 1);
     return Promise.all(
       [...counts].filter(([app]) => app).sort((a, b) => b[1] - a[1])
-        .map(async ([app, n]) => ({ fid: app, username: (await profile(client, app)).username, casts: n }))
+        .map(async ([app, n]) => { const p = await profile(client, app); return { fid: app, username: p.username, pfp: p.pfp, casts: n }; })
     );
   }
 
   const api = {
     'GET /api/me': async () => ({ ...(await profile(client, me)), node: node || cfg.node }),
+
+    'GET /api/node': async () => {
+      const info = await call(client.getInfo({ dbStats: false }), 'read node info');
+      return { host: node || cfg.node, version: info.version, behind: Math.max(...info.shardInfos.map((s) => Number(s.blockDelay))) };
+    },
 
     'GET /api/feed': async (q) => {
       const { following, casts } = await feedCasts(client, me, { apps: true });
