@@ -341,16 +341,15 @@ async function api(path, body) {
 
 // --- the first screen ----------------------------------------------------
 
-function loginView(start, { h, icon, logoMark, toast }) {
+function loginView(start, { h, toast }) {
+  const host = node().replace(/^https:\/\//, '');
   const status = h('div', { class: 'status' });
-  const dot = h('span', { class: 'dot' });
-  const nodeLabel = h('span', {}, node().replace(/^https:\/\//, ''));
+  const nodeLine = h('span', { class: 'node' }, 'node ' + host);
   routes['GET /api/node']().then((n) => {
-    dot.className = 'dot ' + (n.behind < 30 ? 'ok' : 'warn');
-    nodeLabel.textContent = `${n.behind < 30 ? 'Node in sync' : 'Node syncing'} · ${n.host}`;
-  }, () => { dot.className = 'dot warn'; nodeLabel.textContent = `Can't reach ${node().replace(/^https:\/\//, '')}`; });
+    nodeLine.replaceChildren('node ' + n.host + ' · ', h('span', { class: n.behind < 30 ? 'ok' : 'warn' }, n.behind < 30 ? 'in sync' : `${n.behind}s behind`));
+  }, () => nodeLine.replaceChildren('node ' + host + ' · ', h('span', { class: 'warn' }, 'unreachable')));
 
-  const connect = h('button', { class: 'btn big' }, icon('wallet'), 'Connect wallet');
+  const connect = h('button', { class: 'btn wide' }, 'Connect wallet');
   connect.addEventListener('click', async () => {
     connect.disabled = true;
     try {
@@ -369,38 +368,40 @@ function loginView(start, { h, icon, logoMark, toast }) {
       start();
     } catch (err) { toast(err.message, true); }
   };
-  const look = h('form', { class: 'inline', onsubmit: (e) => { e.preventDefault(); browse(e.target.u.value.trim() || 'dwr'); } },
-    h('input', { class: 'field', name: 'u', placeholder: 'Any username', autocapitalize: 'none', autocorrect: 'off', enterkeyhint: 'go' }),
-    h('button', { class: 'btn ghost' }, 'Read'));
-  const sugg = h('div', { class: 'sugg' }, ...['dwr', 'balajis.eth', 'v', 'sats100m'].map((u) =>
-    h('button', { class: 'chip', type: 'button', onclick: () => browse(u) }, '@' + u)));
 
-  const nodeForm = h('form', { class: 'inline', onsubmit: (e) => {
-    e.preventDefault();
-    const v = e.target.n.value.trim().replace(/\/$/, '');
-    if (!/^https:\/\//.test(v)) return toast('The node must be https:// (run ./fc3 https on it).', true);
-    store.set(NODE, v);
-    location.reload();
-  } },
-    h('input', { class: 'field', name: 'n', value: node(), autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false' }),
-    h('button', { class: 'btn ghost' }, 'Use'));
+  return h('div', { class: 'gate' },
+    h('h1', {}, 'farcaster-in-3'),
+    h('p', {}, 'A Farcaster client that runs in this page and talks to one Snapchain read node over its HTTP API. No API keys, no backend.'),
+    nodeLine,
 
-  return h('div', { class: 'gate' }, h('div', { class: 'panel' },
-    logoMark(),
-    h('h1', {}, 'Farcaster, straight from a node'),
-    h('p', { class: 'lede' }, 'A full client running in this page. It reads from and posts to a Snapchain read node. No API keys, no backend, no company in between.'),
-    h('span', { class: 'nodepill' }, dot, nodeLabel),
+    h('h2', {}, 'post'),
     connect,
     status,
-    h('p', { class: 'fine' }, icon('shield'), h('span', {}, 'Your wallet signs a key for this browser. No gas, nothing onchain, and the key can never move your account. Use a test account.')),
-    h('div', { class: 'sep' }, 'or just read'),
-    look,
-    sugg,
-    h('details', {}, h('summary', {}, icon('server'), 'Use a different node'), nodeForm,
-      h('p', { class: 'fine' }, h('span', {}, 'Run your own with three commands, then ', h('code', {}, './fc3 https'), '.'))),
+    h('p', { class: 'small' }, 'The wallet signs a KEY_ADD for a new Ed25519 key kept in this browser. No gas, nothing onchain. The key can cast, react and follow; it cannot change the account. Use a test account.'),
+
+    h('hr'),
+    h('h2', {}, 'read only'),
+    h('form', { class: 'row', onsubmit: (e) => { e.preventDefault(); browse(e.target.u.value.trim() || 'dwr'); } },
+      h('input', { class: 'input', name: 'u', placeholder: 'username or fid', autocapitalize: 'none', autocorrect: 'off', enterkeyhint: 'go' }),
+      h('button', { class: 'btn alt' }, 'Open feed')),
+    h('div', { class: 'try' }, 'try:', ...['dwr', 'balajis.eth', 'v', 'sats100m'].map((u) =>
+      h('button', { type: 'button', onclick: () => browse(u) }, u))),
+
+    h('hr'),
+    h('details', {}, h('summary', {}, 'use another node'),
+      h('form', { class: 'row', onsubmit: (e) => {
+        e.preventDefault();
+        const v = e.target.n.value.trim().replace(/\/$/, '');
+        if (!/^https:\/\//.test(v)) return toast('Needs https:// (run ./fc3 https on the node).', true);
+        store.set(NODE, v);
+        location.reload();
+      } },
+        h('input', { class: 'input', name: 'n', value: node(), autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false' }),
+        h('button', { class: 'btn alt' }, 'Use'))),
+
     h('div', { class: 'foot' },
-      h('a', { href: '../' }, 'How it works'),
-      h('a', { href: 'https://github.com/Sats100M/farcaster-in-3' }, 'Source'))));
+      h('a', { href: '../' }, 'tutorial'),
+      h('a', { href: 'https://github.com/Sats100M/farcaster-in-3' }, 'source')));
 }
 
 function signOut() {
