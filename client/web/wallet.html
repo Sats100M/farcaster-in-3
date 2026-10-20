@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect wallet · farcaster-in-3</title>
+<style>
+  :root { --bg: #fff; --alt: #f5f5f7; --fg: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; --accent: #0071e3; --ok: #1d8f3a; --bad: #c9252d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000; --alt: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #38383a; --accent: #2997ff; --ok: #30d158; --bad: #ff453a; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  main { width: 100%; max-width: 440px; }
+  h1 { font-size: 28px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  p { color: var(--muted); margin: 0 0 20px; }
+  button {
+    width: 100%; font: inherit; font-weight: 600; padding: 14px; border: 0; border-radius: 12px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  ol { list-style: none; padding: 0; margin: 24px 0 0; background: var(--alt); border-radius: 16px; overflow: hidden; }
+  li { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; }
+  li:last-child { border-bottom: 0; }
+  li::before { content: "○"; color: var(--muted); }
+  li.active::before { content: "●"; color: var(--accent); }
+  li.done::before { content: "✓"; color: var(--ok); font-weight: 700; }
+  li.failed::before { content: "✗"; color: var(--bad); font-weight: 700; }
+  .msg { margin-top: 20px; font-size: 15px; }
+  .msg.bad { color: var(--bad); }
+  .msg.ok { color: var(--ok); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Connect your wallet</h1>
+  <p>Your wallet signs two messages that give the terminal client its own app key. Nothing is sent onchain and there's no gas. Your seed phrase stays in the wallet.</p>
+  <button id="connect">Connect wallet</button>
+  <ol>
+    <li id="s-connect">Connect the wallet that owns your Farcaster account</li>
+    <li id="s-1">Approve this client as its own app</li>
+    <li id="s-2">Add the client's app key</li>
+    <li id="s-done">Submit to your node</li>
+  </ol>
+  <div class="msg" id="msg"></div>
+</main>
+<script>
+  const base = location.pathname.replace(/\/$/, '');
+  const $ = (id) => document.getElementById(id);
+  const step = (id, cls) => { $(id).className = cls; };
+  const say = (text, cls = '') => { $('msg').textContent = text; $('msg').className = 'msg ' + cls; };
+  const post = (path, body) => fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  if (!window.ethereum) {
+    $('connect').disabled = true;
+    say('No browser wallet found. Open this link in the browser where MetaMask, Rabby or Coinbase Wallet is installed.', 'bad');
+  }
+
+  $('connect').onclick = async () => {
+    $('connect').disabled = true;
+    step('s-connect', 'active');
+    try {
+      const [address] = await ethereum.request({ method: 'eth_requestAccounts' });
+      await post('/address', { address });
+      step('s-connect', 'done');
+      say('Connected ' + address + '. Looking up your Farcaster account…');
+      await loop(address);
+    } catch (e) {
+      step('s-connect', 'failed');
+      say(e.message || String(e), 'bad');
+      $('connect').disabled = false;
+    }
+  };
+
+  async function loop(address) {
+    let n = 0;
+    for (;;) {
+      const next = await (await fetch(base + '/next')).json();
+      if (next.done) {
+        step('s-done', next.done.ok ? 'done' : 'failed');
+        say(next.done.message + (next.done.ok ? ' You can close this tab.' : ''), next.done.ok ? 'ok' : 'bad');
+        return;
+      }
+      if (next.waiting) { await sleep(500); continue; }
+
+      n++;
+      step('s-' + n, 'active');
+      say(next.label + '. Check your wallet.');
+      try {
+        // EIP-712 signatures name a chain; most wallets only sign for the chain they're on.
+        const want = '0x' + JSON.parse(next.typedData).domain.chainId.toString(16);
+        if ((await ethereum.request({ method: 'eth_chainId' })) !== want) {
+          await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: want }] });
+        }
+        const signature = await ethereum.request({ method: 'eth_signTypedData_v4', params: [address, next.typedData] });
+        await post('/signature', { id: next.id, signature });
+        step('s-' + n, 'done');
+        if (n === 2) { step('s-done', 'active'); say('Submitting to your node…'); }
+      } catch (e) {
+        await post('/signature', { id: next.id, error: e.message || String(e) });
+        step('s-' + n, 'failed');
+      }
+    }
+  }
+</script>
+</body>
+</html>

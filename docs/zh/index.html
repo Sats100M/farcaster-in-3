@@ -104,6 +104,7 @@
   /* On phones code lines run under the button, so give it its own row. */
   @media (max-width: 600px) { .code pre { padding-top: 46px; } }
 
+  .phone { display: block; width: 300px; max-width: 100%; margin: 28px auto 0; border-radius: 28px; border: 1px solid var(--line); }
   .note { margin-top: 48px; padding: 24px 28px; border-radius: 18px; background: #fff8e6; }
   .note p:first-child { margin-top: 0; }
 
@@ -232,11 +233,17 @@ node fc.mjs cast "posting from my own node"
 node fc.mjs follow dwr
 node fc.mjs like 3/0x…
 node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
+      <p class="muted">不想输入助记词？用 <code>init --wallet</code>：它会在你的电脑上打开一个页面，由 MetaMask、Rabby 或 Coinbase Wallet 来签名，助记词始终留在钱包里。</p>
+
+      <h3 style="margin-top:40px;font-size:22px">在手机上用。</h3>
+      <div class="code"><pre>node fc.mjs serve --lan</pre></div>
+      <p class="muted">把同一个客户端变成网页，并打印一个二维码。在同一个 Wi-Fi 下用手机扫码就能登录：看动态、发帖、回复、点赞、转发、关注，还能按应用筛选。app key 一直留在你的电脑上，每个请求都要密码，所有读写只经过你自己的节点。</p>
+      <img class="phone" src="../web-client.png" alt="手机上的网页客户端：发帖框、应用筛选，以及标注 via @warpcast 的 balajis.eth 帖子" loading="lazy">
     </div>
 
     <div class="note">
-      <p><strong>对待助记词，要像对待 <code>rm -rf</code> 一样小心。</strong>谁拿到它，谁就能控制你的账号。只把它粘贴到你读过代码或者信得过的软件里。这个客户端只在内存里用它签一条消息，既不保存，也不会把它发送到任何地方。你可以自己检查：<a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">代码就一个文件</a>。</p>
-      <p>第一次尝试？请用测试账号。如果某个应用支持委托签名（delegated signing），也就是在已经登录你账号的应用里批准它的密钥，优先用这种方式：助记词不用离开你的手机。这个客户端之所以要助记词，只是因为一台全新的服务器上没有可以发起批准的应用。</p>
+      <p><strong>对待助记词，要像对待 <code>rm -rf</code> 一样小心。</strong>谁拿到它，谁就能控制你的账号。只把它粘贴到你读过代码或者信得过的软件里。这个客户端只在内存里用它签一条消息，既不保存，也不会把它发送到任何地方。你可以自己检查：<a href="https://github.com/Sats100M/farcaster-in-3/tree/main/client">整个客户端只有几个短文件</a>。</p>
+      <p>第一次尝试？请用测试账号。如果某个应用支持委托签名（delegated signing），也就是在已经登录你账号的应用里批准它的密钥，优先用这种方式：助记词不用离开你的手机。如果你的电脑上装了浏览器钱包，<code>init --wallet</code> 就很接近这种方式：由钱包签名，助记词根本不会交给这个客户端。</p>
     </div>
 
     <p class="muted" style="margin-top:32px">用完了？<code>node scripts/destroy.mjs</code> 会删除所有资源，计费随之停止。</p>

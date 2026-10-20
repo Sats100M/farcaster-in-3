@@ -2,6 +2,7 @@
 // Command 2: a minimal Farcaster client that talks only to your own read node.
 //
 //   fc init --node <ip>        import a seed phrase once, register this client's own app key
+//                              (--wallet: approve in a browser wallet instead, no seed phrase)
 //   fc feed                    casts from people you follow
 //   fc cast "hello"            post (also: --reply <fid>/<hash>)
 //   fc follow <user>           also: unfollow
@@ -9,20 +10,16 @@
 //   fc delete <fid>/<hash>     delete one of your casts
 //   fc apps <user>             which apps a user posts from (for --only-app / --hide-app)
 //   fc revoke                  remove this client's app key (no seed phrase needed)
+//   fc serve                   the same client as a web page (--lan: open it on your phone)
 //
 // Reads go to your node over gRPC (port 3383). Writes go to the same node, which
 // checks them and gossips them on to the validators; read nodes keep no mempool.
 
-import { createInterface } from 'node:readline/promises';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { mnemonicToAccount } from 'viem/accounts';
 import {
-  getInsecureHubRpcClient,
   ReactionType,
-  UserDataType,
   NobleEd25519Signer,
   makeCastAdd,
   makeLinkAdd,
@@ -36,42 +33,16 @@ import {
   bytesToHexString,
   hexStringToBytes,
 } from '@farcaster/hub-nodejs';
-import { NETWORK, parseArgs, parseCastId, requestFidOf, ago, buildKeyAdd } from './lib.mjs';
-
-const CONFIG = join(homedir(), '.farcaster-in-3.json');
+import { parseArgs, parseCastId, ago, buildKeyAdd, castText } from './lib.mjs';
+import { connectWallet } from './wallet.mjs';
+import { CONFIG, nodeClient, call, loadConfig as load, submit, resolveFid, username, loadKeys, appOf, feedCasts } from './hub.mjs';
 
 const [command, ...rest] = process.argv.slice(2);
 const { flags, args } = parseArgs(rest);
 
 // ---------------------------------------------------------------------------
 
-function nodeClient(host) {
-  // A bare IP or hostname means the default gRPC port.
-  return getInsecureHubRpcClient(host.includes(':') ? host : `${host}:3383`);
-}
-
-// HubRpcClient returns neverthrow Results; turn errors into exceptions.
-async function call(promise, what) {
-  const result = await promise;
-  if (result.isErr()) throw new Error(`${what}: ${result.error.message}`);
-  return result.value;
-}
-
-function loadConfig() {
-  if (!existsSync(CONFIG)) throw new Error('Not set up yet. Run: fc init --node <your node ip>');
-  const cfg = JSON.parse(readFileSync(CONFIG, 'utf8'));
-  const client = nodeClient(flags.node || cfg.node);
-  const signer = new NobleEd25519Signer(hexStringToBytes(cfg.privateKey)._unsafeUnwrap());
-  return { ...cfg, client, signer, dataOptions: { fid: cfg.fid, network: NETWORK } };
-}
-
-async function submit(client, made, what) {
-  if (made.isErr()) throw new Error(`${what}: ${made.error.message}`);
-  // A successful response means the node validated and relayed the message,
-  // not that a validator has put it in a block yet. That usually takes seconds.
-  await call(client.submitMessage(made.value), what);
-  return made.value;
-}
+const loadConfig = () => load(flags.node);
 
 // Hidden prompt for the seed phrase: nothing is echoed, nothing is written to disk.
 async function askSecret(question) {
@@ -101,38 +72,6 @@ async function askSecret(question) {
   });
 }
 
-async function resolveFid(client, who) {
-  if (/^\d+$/.test(who)) return Number(who);
-  const name = who.replace(/^@/, '');
-  const proof = await call(client.getUsernameProof({ name: new TextEncoder().encode(name) }), `look up @${name}`);
-  return proof.fid;
-}
-
-
-const usernames = new Map();
-async function username(client, fid) {
-  if (!usernames.has(fid)) {
-    const res = await client.getUserData({ fid, userDataType: UserDataType.USERNAME });
-    usernames.set(fid, res.isOk() ? res.value.data.userDataBody.value : `fid:${fid}`);
-  }
-  return usernames.get(fid);
-}
-
-// Map each of an author's keys to the app (requestFid) it was issued to.
-// This is how casts are attributed to clients: every message is signed by an
-// app key, and every app key carries the FID of the app that requested it.
-const appByKey = new Map();
-async function loadKeys(client, fid) {
-  if (appByKey.has(`loaded:${fid}`)) return;
-  const res = await client.getSignersByFid({ fid, requesterFids: [] });
-  if (res.isOk()) {
-    for (const s of res.value.signers) appByKey.set(bytesToHexString(s.key)._unsafeUnwrap(), requestFidOf(s));
-  }
-  appByKey.set(`loaded:${fid}`, true);
-}
-const appOf = (msg) => appByKey.get(bytesToHexString(msg.signer)._unsafeUnwrap()) ?? 0;
-
-
 // ---------------------------------------------------------------------------
 
 async function init() {
@@ -143,17 +82,33 @@ async function init() {
   const info = await call(client.getInfo({ dbStats: false }), `reach node ${node}`);
   console.log(`Connected to node ${node} (snapchain ${info.version})`);
 
-  console.log(`
+  let account;
+  let wallet;
+  if (flags.wallet) {
+    wallet = await connectWallet();
+    account = wallet.account;
+  } else {
+    console.log(`
 This uses your seed phrase ONCE, in memory, to sign one message that gives this
 client its own app key. The phrase is never saved or sent anywhere; only the
 signature is. Only paste a seed phrase into software you have read or trust.
+Rather not type it? Use a browser wallet instead: fc init --node ${node} --wallet
 `);
-  const phrase = await askSecret('Seed phrase (hidden): ');
-  const account = mnemonicToAccount(phrase);
+    account = mnemonicToAccount(await askSecret('Seed phrase (hidden): '));
+  }
+  try {
+    await addKey(client, node, account);
+    await wallet?.finish(true, 'Done. The terminal client has its own app key.');
+  } catch (err) {
+    await wallet?.finish(false, err.message);
+    throw err;
+  }
+}
 
+async function addKey(client, node, account) {
   const event = await call(
     client.getIdRegistryOnChainEventByAddress({ address: hexStringToBytes(account.address)._unsafeUnwrap() }),
-    `find the Farcaster account owned by ${account.address}`
+    `find the Farcaster account owned by ${account.address} (it must be the account's custody address)`
   );
   const fid = event.fid;
   console.log(`Custody address ${account.address} owns FID ${fid} (@${await username(client, fid)})`);
@@ -200,20 +155,10 @@ async function feed() {
   const hideApp = flags['hide-app'] && (await resolveFid(client, String(flags['hide-app'])));
   const viewer = flags.fid ? await resolveFid(client, String(flags.fid)) : fid;
 
-  const links = await call(client.getLinksByFid({ fid: viewer, linkType: 'follow', pageSize: 200, reverse: true }), 'read follows');
-  const following = links.messages.map((m) => m.data.linkBody.targetFid).filter(Boolean);
-  if (!following.length) return console.log('You don\'t follow anyone yet. Try: fc follow dwr');
-
-  const perAuthor = await Promise.all(
-    following.map(async (f) => {
-      const res = await client.getCastsByFid({ fid: f, pageSize: 5, reverse: true });
-      return res.isOk() ? res.value.messages : [];
-    })
-  );
-  let casts = perAuthor.flat().sort((a, b) => b.data.timestamp - a.data.timestamp);
+  let { following, casts } = await feedCasts(client, viewer, { apps: Boolean(onlyApp || hideApp) });
+  if (!following.length) return console.log("You don't follow anyone yet. Try: fc follow dwr");
 
   if (onlyApp || hideApp) {
-    await Promise.all([...new Set(casts.map((c) => c.data.fid))].map((f) => loadKeys(client, f)));
     if (onlyApp) casts = casts.filter((c) => appOf(c) === onlyApp);
     if (hideApp) casts = casts.filter((c) => appOf(c) !== hideApp);
     if (!casts.length) return console.log('No recent casts left after the app filter. See which apps people use with: fc apps <username>');
@@ -223,7 +168,8 @@ async function feed() {
     const body = c.data.castAddBody;
     const reply = body.parentCastId ? `  ↳ reply to ${body.parentCastId.fid}` : '';
     console.log(`@${await username(client, c.data.fid)} · ${ago(c.data.timestamp)}${reply}`);
-    if (body.text) console.log(`  ${body.text.replace(/\n/g, '\n  ')}`);
+    const text = await castText(body, (f) => username(client, f));
+    if (text) console.log(`  ${text.replace(/\n/g, '\n  ')}`);
     for (const e of body.embeds) if (e.url) console.log(`  [${e.url}]`);
     console.log(`  id ${c.data.fid}/${bytesToHexString(c.hash)._unsafeUnwrap()}\n`);
   }
@@ -300,7 +246,18 @@ async function apps() {
   console.log('\nFilter your feed with: fc feed --only-app <app>   or   fc feed --hide-app <app>');
 }
 
-const commands = { init, whoami, feed, cast, delete: del, follow, unfollow, like, unlike, recast, unrecast, apps, revoke };
+async function serveWeb() {
+  const { serve } = await import('./web.mjs');
+  await serve({
+    node: flags.node,
+    port: Number(flags.port || 3000),
+    host: flags.lan ? '0.0.0.0' : flags.host || '127.0.0.1',
+    password: flags.password || process.env.FC_PASSWORD,
+  });
+  await new Promise(() => {}); // keep serving until Ctrl+C
+}
+
+const commands = { serve: serveWeb, init, whoami, feed, cast, delete: del, follow, unfollow, like, unlike, recast, unrecast, apps, revoke };
 if (!commands[command]) {
   console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
   process.exit(command ? 1 : 0);

@@ -104,6 +104,7 @@
   /* On phones code lines run under the button, so give it its own row. */
   @media (max-width: 600px) { .code pre { padding-top: 46px; } }
 
+  .phone { display: block; width: 300px; max-width: 100%; margin: 28px auto 0; border-radius: 28px; border: 1px solid var(--line); }
   .note { margin-top: 48px; padding: 24px 28px; border-radius: 18px; background: #fff8e6; }
   .note p:first-child { margin-top: 0; }
 
@@ -232,11 +233,17 @@ node fc.mjs cast "posting from my own node"
 node fc.mjs follow dwr
 node fc.mjs like 3/0x…
 node fc.mjs feed --hide-app &lt;app&gt;</pre></div>
+      <p class="muted">Rather not type the phrase? <code>init --wallet</code> opens a page on your computer, and MetaMask, Rabby or Coinbase Wallet signs instead. The phrase stays in the wallet.</p>
+
+      <h3 style="margin-top:40px;font-size:22px">On your phone.</h3>
+      <div class="code"><pre>node fc.mjs serve --lan</pre></div>
+      <p class="muted">Turns the same client into a web page and prints a QR code. Scan it on the same Wi-Fi and you're logged in: feed, casting, replies, likes, recasts, follows and the app filter. The app key stays on your computer, a password guards every request, and it only goes through your node.</p>
+      <img class="phone" src="web-client.png" alt="The web client on a phone: a compose box, an app filter, and casts from balajis.eth marked via @warpcast" loading="lazy">
     </div>
 
     <div class="note">
-      <p><strong>Treat your recovery phrase like <code>rm -rf</code>.</strong> It controls your account. Only paste it into software you've read or trust. This client uses it in memory to sign one message and never stores or sends it. You can check: <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/client/fc.mjs">it's one file</a>.</p>
-      <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. This client asks for the phrase only because a fresh server has no app to approve from.</p>
+      <p><strong>Treat your recovery phrase like <code>rm -rf</code>.</strong> It controls your account. Only paste it into software you've read or trust. This client uses it in memory to sign one message and never stores or sends it. You can check: <a href="https://github.com/Sats100M/farcaster-in-3/tree/main/client">the whole client is a few short files</a>.</p>
+      <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. On a computer with a browser wallet, <code>init --wallet</code> gets you most of the way there: the wallet signs and the phrase never reaches this client.</p>
     </div>
 
     <p class="muted" style="margin-top:32px">Finished? <code>node scripts/destroy.mjs</code> deletes everything, and billing stops.</p>

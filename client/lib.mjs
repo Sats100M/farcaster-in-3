@@ -71,6 +71,24 @@ export function ago(farcasterTs, now = Date.now()) {
   return `${Math.floor(s / 86400)}d`;
 }
 
+export const MAX_CAST_BYTES = 320;
+export const castByteLength = (text) => new TextEncoder().encode(text).length;
+
+// Mentions aren't in a cast's text. They're stored as FIDs plus UTF-8 byte
+// offsets, and each client puts the current @username back in when it shows the cast.
+export async function castText(body, nameOf) {
+  const bytes = new TextEncoder().encode(body.text || '');
+  const decode = (b) => new TextDecoder().decode(b);
+  let out = '';
+  let at = 0;
+  const mentions = (body.mentions || []).map((fid, i) => [body.mentionsPositions[i], fid]).sort((a, b) => a[0] - b[0]);
+  for (const [pos, fid] of mentions) {
+    out += decode(bytes.slice(at, pos)) + '@' + (await nameOf(fid));
+    at = pos;
+  }
+  return out + decode(bytes.slice(at));
+}
+
 // Gasless app key: the custody account signs an EIP-712 KeyAdd (and the
 // SignedKeyRequest, since this client acts as its own app), the new key signs
 // the envelope to prove possession, and the node relays it. No Optimism tx.

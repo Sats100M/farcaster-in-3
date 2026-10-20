@@ -10,7 +10,7 @@ import {
   hexStringToBytes,
   toFarcasterTime,
 } from '@farcaster/hub-nodejs';
-import { SCOPES, TTL, parseArgs, parseCastId, requestFidOf, ago, buildKeyAdd } from '../lib.mjs';
+import { SCOPES, TTL, parseArgs, parseCastId, requestFidOf, ago, buildKeyAdd, castText, castByteLength } from '../lib.mjs';
 
 // Well-known development mnemonic (Hardhat/Anvil). Never holds anything real.
 const TEST_MNEMONIC = 'test test test test test test test test test test test junk';
@@ -111,4 +111,13 @@ test('a self-revoke KEY_REMOVE signed by the app key passes validation', async (
   assert.deepEqual(msg.value.signer, key);
   const valid = await validations.validateMessage(msg.value);
   assert.ok(valid.isOk(), valid.isErr() ? valid.error.message : '');
+});
+
+test('castText puts mentions back at their byte offsets', async () => {
+  const names = { 2: 'v', 3: 'dwr' };
+  const nameOf = async (fid) => names[fid];
+  // 中 is 3 bytes, so "!" sits at byte 12: offsets count UTF-8 bytes, not characters.
+  assert.equal(await castText({ text: 'gm  and 中 !', mentions: [3, 2], mentionsPositions: [3, 12] }, nameOf), 'gm @dwr and 中 @v!');
+  assert.equal(await castText({ text: 'no mentions', mentions: [], mentionsPositions: [] }, nameOf), 'no mentions');
+  assert.equal(castByteLength('中'), 3);
 });
