@@ -64,6 +64,7 @@ Sent upstream while building this:
 - hub-nodejs: [#2744](https://github.com/farcasterxyz/hub-monorepo/pull/2744) every `Client.md` example fixed and run against a Snapchain node
 - Farcaster docs: [#470](https://github.com/farcasterxyz/docs/pull/470) Hello World adds its key without gas, the feed guide runs as written, no more pointers to the hoyt hub
 - Snapchain docs: [#1053](https://github.com/farcasterxyz/snapchain/pull/1053) the AWS node guide costs about $300/month, not $100
+- Snapchain: [#1059](https://github.com/farcasterxyz/snapchain/pull/1059) paging replies, mentions and reactions looped on the first page forever (found while reading every reply to the bounty cast), [#1060](https://github.com/farcasterxyz/snapchain/pull/1060) answer CORS preflight so web pages can submit messages, [#1061](https://github.com/farcasterxyz/snapchain/pull/1061) accept `?requesterFids=1` as documented
 
 Seed phrases: only paste one into software you've read. This client uses it in memory to sign one message and never stores or sends it. Try it with a test account first, and prefer delegated signing (approving a key from an app that already holds your account) wherever an app offers it. Details in [SECURITY.md](SECURITY.md).
 
