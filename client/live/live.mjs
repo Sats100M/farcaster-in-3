@@ -313,7 +313,8 @@ const routes = {
   },
 
   // The custody wallet signs the removal. (A key can also remove itself, but that
-  // needs the app nonce, which the HTTP API can't return yet: requesterFids is rejected.)
+  // needs the app nonce, and the HTTP API only returns it for ?requesterFids[]=<fid>
+  // with unescaped brackets, which URLSearchParams never produces.)
   async 'POST /api/revoke'() {
     const { signer, dataOptions, publicKey, address } = writer();
     const { currentUserNonce } = await get('signersByFid', { fid: dataOptions.fid });
