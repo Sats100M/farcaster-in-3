@@ -2,6 +2,7 @@
 // The page is client/web/index.html with live.js loaded first. Run: npm run build:live
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const out = new URL('../../docs/app/', import.meta.url);
 mkdirSync(out, { recursive: true });
@@ -11,7 +12,7 @@ await build({
   bundle: true,
   format: 'iife',
   platform: 'browser',
-  target: 'es2022',
+  target: ['es2020', 'safari14'],
   minify: true,
   legalComments: 'eof',
   // lib.mjs imports @farcaster/hub-nodejs, which wraps @farcaster/core with gRPC.
@@ -35,6 +36,7 @@ await build({
 const page = readFileSync(new URL('../web/index.html', import.meta.url), 'utf8')
   .replace('<title>farcaster-in-3</title>', `<title>Try it live · farcaster-in-3</title>
 <meta name="description" content="A Farcaster client in your browser, reading straight from a Snapchain read node. No API keys, no backend.">`)
-  .replace('<script>', '<script src="live.js"></script>\n<script>');
+  // A version in the URL, so a browser never pairs a new page with an old cached live.js.
+  .replace('<script>', `<script src="live.js?v=${createHash('sha256').update(readFileSync(new URL('live.js', out))).digest('hex').slice(0, 10)}"></script>\n<script>`);
 writeFileSync(new URL('index.html', out), page);
 console.log('built docs/app/');

@@ -240,7 +240,7 @@
 <body>
 <div id="app"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="live.js"></script>
+<script src="live.js?v=b2c9121e83"></script>
 <script>
 'use strict';
 const $app = document.getElementById('app');
@@ -650,10 +650,24 @@ function route() {
   return feedView();
 }
 
+// Anything that goes wrong before the first screen shows here, never as a blank page.
+function fatal(title, detail) {
+  $app.replaceChildren(h('div', { class: 'gate' }, h('div', { class: 'panel' },
+    logoMark(),
+    h('h1', {}, title),
+    h('p', { class: 'lede' }, detail),
+    h('button', { class: 'btn big', onclick: () => location.reload() }, 'Try again'))));
+}
+window.addEventListener('error', (e) => { if (!me && !$app.childElementCount) fatal('Something broke', String(e.message || e)); });
+window.addEventListener('unhandledrejection', (e) => { if (!me && !$app.childElementCount) fatal('Something broke', String(e.reason?.message || e.reason)); });
+
 async function start() {
   try {
     me = await api('/api/me');
-  } catch { return; }
+  } catch (err) {
+    if (err.status !== 401 && !/Log in first/.test(err.message)) fatal("Couldn't start", err.message);
+    return;
+  }
   if (!start.listening) window.addEventListener('hashchange', route);
   start.listening = true;
   route();
@@ -662,6 +676,10 @@ async function start() {
 // A QR code from `fc serve --lan` carries the password after #, which never
 // reaches the server in a URL. Log in with it, then drop it from the address bar.
 (async () => {
+  // On the tutorial site the client code comes from live.js; if it didn't load, say so.
+  if (!LIVE && location.hostname.endsWith('github.io')) {
+    return fatal("The client didn't load", 'Refresh the page. If it stays like this, your browser may be too old: try a current Chrome, Safari or Firefox.');
+  }
   const fromQr = !LIVE && location.hash.length > 1 && !location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(1)) : '';
   if (fromQr) {
     history.replaceState(null, '', location.pathname);
