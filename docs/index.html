@@ -248,7 +248,7 @@ az login                              <span class="c"># or aws login, or HCLOUD_
       <p>Trying it for the first time? Use a test account. And when an app offers delegated signing, where you approve its key from an app that already holds your account, prefer that: the phrase never leaves your phone. On a computer with a browser wallet, <code>--wallet</code> gets you most of the way there: the wallet signs and the phrase never reaches this client.</p>
     </div>
 
-    <p class="muted" style="margin-top:32px">Finished? <code>./fc3 destroy</code> deletes everything, and billing stops. Testing it for someone? <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/VOUCHER.md">VOUCHER.md</a> has a checklist.</p>
+    <p class="muted" style="margin-top:32px">Finished? <code>./fc3 destroy</code> deletes everything, and billing stops. Testing it for someone? <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/VOUCHER.md">VOUCHER.md</a> has a checklist. Using a coding agent? Point it at <a href="https://github.com/Sats100M/farcaster-in-3/blob/main/AGENTS.md">AGENTS.md</a>; it never touches your recovery phrase.</p>
   </div>
 </section>
 
@@ -354,7 +354,7 @@ curl http://&lt;ip&gt;:3381/v1/info            <span class="c"># from anywhere</
       <tr><td>Azure, D4s v4 with 2 TB</td><td class="r">$294</td><td class="r">$9.70</td></tr>
     </table>
 
-    <h3>Troubleshooting</h3>
+    <h3 id="troubleshooting">Troubleshooting</h3>
     <details><summary>The client can't reach my node.</summary><p>The API starts after the snapshot is restored. Run <code>fc-node-status</code> on the server, and make sure port 3383 is open.</p></details>
     <details><summary>One shard is months behind and barely moving.</summary><p>Snapshots are replaced every day, and the node reads the download list for every shard before it starts. If the first sync takes long enough, a shard's snapshot is gone by the time its turn comes, so the node skips it and replays that shard from the beginning, which takes weeks. <code>fc-node-status</code> warns about this and prints the fix: <code>reload-shard.sh --shard N</code>, which fetches today's snapshot for just that shard and swaps it in. It took about an hour for shard 0.</p></details>
     <details><summary>"Nonce is not greater than stored nonce."</summary><p>Another key was added for your account at the same moment. Run <code>init</code> again.</p></details>

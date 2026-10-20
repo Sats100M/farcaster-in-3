@@ -26,6 +26,7 @@ On Windows, `.c3`. You need Node.js 20+, git, and a login for Azure, AWS or Het
 - `fc serve` (what `./fc3 client` opens) is the same client as a web page. `--lan` prints a QR code for your phone. The app key stays on the computer; a password guards every request.
 - `client/live/` is that page with no server at all, published on the tutorial site: it runs in the browser, talks straight to a node over HTTPS, and gets its key from a browser wallet. Without a wallet you can still read anyone's feed.
 - `VOUCHER.md` is a checklist for testing it, from 10 minutes to the full run.
+- `AGENTS.md` lets a coding agent (Claude Code, Codex) do the setup from one pasted prompt, with rules: it never handles the recovery phrase and asks before anything that costs money.
 
 The client only talks to your node: reads over gRPC (or HTTPS in the browser), and writes go to the same node, which relays them to the validators.
 
